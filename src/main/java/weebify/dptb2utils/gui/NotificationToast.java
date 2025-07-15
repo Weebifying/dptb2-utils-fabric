@@ -1,6 +1,5 @@
 package weebify.dptb2utils.gui;
 
-import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderLayer;
@@ -20,7 +19,9 @@ import java.util.List;
 public class NotificationToast implements Toast {
     private static final Identifier TEXTURE = Identifier.ofVanilla("toast/advancement");
     private static final Identifier ICON = Identifier.of(DPTB2Utils.MOD_ID, "textures/notif.png");
-    public static final int DEFAULT_DURATION_MS = 8000;
+    public static final float DEFAULT_DURATION_MS = 8000;
+    public static final float TITLE_PHASE_MS = 2500;
+    public static final float FADE_DURATION = 300;
     private final String title;
     private final String description;
     private final int color;
@@ -45,7 +46,7 @@ public class NotificationToast implements Toast {
             manager.getClient().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.ENTITY_PLAYER_LEVELUP, 1, 1));
         }
 
-        this.visibility = time >= 8000.0 * manager.getNotificationDisplayTimeMultiplier() ? Toast.Visibility.HIDE : Toast.Visibility.SHOW;
+        this.visibility = time >= DEFAULT_DURATION_MS * manager.getNotificationDisplayTimeMultiplier() ? Toast.Visibility.HIDE : Toast.Visibility.SHOW;
     }
 
     @Override
@@ -55,24 +56,25 @@ public class NotificationToast implements Toast {
         List<OrderedText> list = textRenderer.wrapLines(StringVisitable.plain(this.description), 125);
         if (list.size() == 1) {
             context.drawText(textRenderer, this.title, 30, 7, this.color, false);
-            context.drawText(textRenderer, list.get(0), 30, 18, Colors.WHITE, false);
+            context.drawText(textRenderer, list.get(0), 30, 18, this.color, false);
         } else {
-            int j = 2500;
-            float f = 300.f;
-            if (startTime < 2500) {
-                int k = MathHelper.floor(MathHelper.clamp((float) (2500 - startTime) / 300.f, 0.f, 1.f) * 255.f);
-                context.drawText(textRenderer, this.title, 30, 11, this.color & Colors.WHITE | k << 24, false);
+//            int j = 1500;
+//            float f = 300.f;
+            if (startTime < TITLE_PHASE_MS) {
+                int k = MathHelper.floor(MathHelper.clamp((TITLE_PHASE_MS - startTime) / FADE_DURATION, 0.f, 1.f) * 255.f) << 24 | 67108864;
+                context.drawText(textRenderer, this.title, 30, 11, this.color & Colors.WHITE | k, false);
             } else {
-                int k = MathHelper.floor(MathHelper.clamp((float) (startTime - 2500) / 300.f, 0.f, 1.f) * 252.f);
+                int k = MathHelper.floor(MathHelper.clamp((startTime - TITLE_PHASE_MS) / FADE_DURATION, 0.f, 1.f) * 252.f) << 24 | 67108864;
                 int l = this.getHeight() / 2 - list.size() * 9 / 2;
 
+
                 for (OrderedText orderedText : list) {
-                    context.drawText(textRenderer, orderedText, 30, l, this.color & Colors.WHITE | k << 24, false);
+                    context.drawText(textRenderer, orderedText, 30, l, this.color & Colors.WHITE | k, false);
                     l += 9;
                 }
             }
         }
 
-        context.drawTexture(RenderLayer::getGuiTextured, ICON, 8, 8, 0, 0, 16, 16, 16, 16, this.color);
+        context.drawTexture(RenderLayer::getGuiTextured, ICON, 8, 8, 0, 0, 16, 16, 16, 16, this.color & Colors.WHITE | 0xFF000000);
     }
 }

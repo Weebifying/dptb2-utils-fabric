@@ -31,15 +31,15 @@ public class ChatHudMixin {
         String content = message.getString().replaceAll("§[0-9a-fk-or]", "");
 
         if (mod.getNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
-            toastManager.add(new NotificationToast("Shop Update!", "New items available at the Rotating Shop!", 0xFFFF55FF));
+            toastManager.add(new NotificationToast("Shop Update!", "New items available at the Rotating Shop!", 0xFF55FF));
         } else if (mod.getNotifs("buttonMayhem") && content.startsWith("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {
-            toastManager.add(new NotificationToast("Button Mayhem!", "The BUTTON has no cooldown for 10s!", 0xFFFF0000));
+            toastManager.add(new NotificationToast("Button Mayhem!", "The BUTTON has no cooldown for 10s!", 0xFF0000));
         } else if (mod.getNotifs("buttonDisable") && content.startsWith("* [!] The BUTTON has been disabled for 5s!")) {
-            toastManager.add(new NotificationToast("Button Disabled!", "The BUTTON has been disabled for 5s!", 0xFF00FF00));
+            toastManager.add(new NotificationToast("Button Disabled!", "The BUTTON has been disabled for 5s!", 0x00FF00));
         } else if (mod.getNotifs("buttonImmunity") && content.startsWith("* [!] Whoever clicks the BUTTON next will not die!")) {
-            toastManager.add(new NotificationToast("Button Immunity!", "Whoever clicks the BUTTON next will not die!", 0xFF55FFFF));
+            toastManager.add(new NotificationToast("Button Immunity!", "Whoever clicks the BUTTON next will not die!", 0x55FFFF));
         } else if (mod.getNotifs("bootsCollected") && content.startsWith("* WOAH!")) {
-            toastManager.add(new NotificationToast("Boots Acquisition!", "Someone just collected a rare boots!", 0xFFFFFF55));
+            toastManager.add(new NotificationToast("Boots Acquisition!", "Someone just collected a rare boots!", 0xFFFF55));
 
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             Text text = Text.empty()
@@ -48,7 +48,7 @@ public class ChatHudMixin {
             mod.bootsList.add(text);
         }
         else if (mod.getNotifs("doorSwitch") && content.startsWith("* [!] The DOOR has cycled! Which one is it now?")) {
-            toastManager.add(new NotificationToast("Door Switch!", "The DOOR has cycled! Which one is it now?", 0xFFFFAA00));
+            toastManager.add(new NotificationToast("Door Switch!", "The DOOR has cycled! Which one is it now?", 0xFFAA00));
 
         }
 
