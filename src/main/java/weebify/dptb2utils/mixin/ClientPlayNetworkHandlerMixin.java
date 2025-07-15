@@ -5,15 +5,22 @@ import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.toast.ToastManager;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
+import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import weebify.dptb2utils.DPTB2Utils;
 import weebify.dptb2utils.gui.NotificationToast;
 
+import java.util.Random;
+
 @Mixin(ClientPlayNetworkHandler.class)
 public class ClientPlayNetworkHandlerMixin {
+	@Unique
+	private static Random rand = new Random();
+
 	@Inject(method = "onGameMessage", at=@At("HEAD"))
 	private void onGameMessageInject(GameMessageS2CPacket packet, CallbackInfo ci) {
 		if (!packet.overlay()) {
@@ -50,7 +57,7 @@ public class ClientPlayNetworkHandlerMixin {
 
 				if (mod.getAutoCheer() && content.startsWith("* COMMUNITY GOAL!")) {
 					if (mc.getNetworkHandler() != null) {
-						mc.getNetworkHandler().sendChatCommand("cheer");
+						mod.scheduleTask(rand.nextInt(26) + 5, () -> mc.getNetworkHandler().sendChatCommand("cheer"));
 						mod.action = false;
 					}
 				}

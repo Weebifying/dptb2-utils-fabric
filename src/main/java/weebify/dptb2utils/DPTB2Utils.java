@@ -15,6 +15,7 @@ import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import weebify.dptb2utils.gui.screen.ModMenuScreen;
+import weebify.dptb2utils.utils.DelayedTask;
 
 import java.io.File;
 import java.io.FileReader;
@@ -34,6 +35,7 @@ public class DPTB2Utils implements ClientModInitializer {
 
 	private boolean displayScreen = false;
 	public boolean action = true;
+	public List<DelayedTask> scheduledTasks = new ArrayList<>();
 
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
 	public static final Gson GSON = new Gson();
@@ -64,10 +66,15 @@ public class DPTB2Utils implements ClientModInitializer {
 		initializeEvents();
 	}
 
+	public void scheduleTask(int ticks, Runnable task) {
+		this.scheduledTasks.add(new DelayedTask(ticks, task));
+	}
+
 	private void initializeEvents() {
 		ClientTickEvents.START_CLIENT_TICK.register(this::onClientTick);
 		ClientTickEvents.END_CLIENT_TICK.register((var) -> {
 			this.action = true;
+			scheduledTasks.removeIf(DelayedTask::tick);
 		});
 	}
 

@@ -34,7 +34,6 @@ public class ModConfigs {
         createNewConfig(notifsMap, notifsDefaultMap, "bootsCollected", "false", Boolean.class);
         createNewConfig(notifsMap, notifsDefaultMap, "doorSwitch", "false", Boolean.class);
 
-
         createNewConfig(othersMap, othersDefaultMap, "autoCheer", "false", Boolean.class);
     }
 }
