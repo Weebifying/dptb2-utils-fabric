@@ -52,12 +52,14 @@ public class DPTB2Utils implements ClientModInitializer {
 		instance = this;
 		this.config = new ModConfigs();
 		this.saveFile = new File(mc.runDirectory + "/config", "weebify_dptb2utils.json");
-		if (!this.saveFile.exists()) {
-			try (FileWriter fw = new FileWriter(this.saveFile)) {
-				GSON.toJson(this.config, fw);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+		try {
+			if (this.saveFile.createNewFile()) {
+				try (FileWriter fw = new FileWriter(this.saveFile)) {
+					GSON.toJson(this.config, fw);
+				}
 			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 		this.lastSaved = saveFile.lastModified();
 		this.loadSettings();

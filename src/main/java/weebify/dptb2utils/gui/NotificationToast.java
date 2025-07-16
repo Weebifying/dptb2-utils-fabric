@@ -58,8 +58,6 @@ public class NotificationToast implements Toast {
             context.drawText(textRenderer, this.title, 30, 7, this.color, false);
             context.drawText(textRenderer, list.get(0), 30, 18, this.color, false);
         } else {
-//            int j = 1500;
-//            float f = 300.f;
             if (startTime < TITLE_PHASE_MS) {
                 int k = MathHelper.floor(MathHelper.clamp((TITLE_PHASE_MS - startTime) / FADE_DURATION, 0.f, 1.f) * 255.f) << 24 | 67108864;
                 context.drawText(textRenderer, this.title, 30, 11, this.color & Colors.WHITE | k, false);

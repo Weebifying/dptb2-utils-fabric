@@ -22,8 +22,8 @@ public class NotificationsScreen extends Screen {
             btn.setMessage(Text.of(String.format("Shop Update: %s", !mod.setNotifs("shopUpdate", !mod.getNotifs("shopUpdate")) ? "ON" : "OFF")));
         }).dimensions(this.width / 2 - 80 - 75, 75, 150, 20).build());
 
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Boots Acquisition: %s", mod.getNotifs("bootsCollected") ? "ON" : "OFF")), (btn) -> {
-            btn.setMessage(Text.of(String.format("Boots Acquisition: %s", !mod.setNotifs("bootsCollected", !mod.getNotifs("bootsCollected")) ? "ON" : "OFF")));
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Boots Tracking: %s", mod.getNotifs("bootsCollected") ? "ON" : "OFF")), (btn) -> {
+            btn.setMessage(Text.of(String.format("Boots Tracking: %s", !mod.setNotifs("bootsCollected", !mod.getNotifs("bootsCollected")) ? "ON" : "OFF")));
         }).dimensions(this.width / 2 + 80 - 75, 75, 150, 20).build());
 
         this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("City Door Switch: %s", mod.getNotifs("doorSwitch") ? "ON" : "OFF")), (btn) -> {
