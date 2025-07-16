@@ -34,6 +34,7 @@ public class ModConfigs {
         createNewConfig(notifsMap, notifsDefaultMap, "buttonMayhem", "false", Boolean.class);
         createNewConfig(notifsMap, notifsDefaultMap, "buttonDisable", "false", Boolean.class);
         createNewConfig(notifsMap, notifsDefaultMap, "buttonImmunity", "false", Boolean.class);
+        createNewConfig(notifsMap, notifsDefaultMap, "nativeSystemNotifications", "false", Boolean.class);
 
         createNewConfig(othersMap, othersDefaultMap, "autoCheer", "false", Boolean.class);
     }

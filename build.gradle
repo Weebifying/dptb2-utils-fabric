@@ -38,7 +38,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 17
 }
 
 java {
@@ -47,8 +47,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
 jar {
@@ -75,10 +75,4 @@ publishing {
 		// The repositories here will be used for publishing your artifact, not for
 		// retrieving dependencies.
 	}
-}
-
-task buildAndCopyToMods(type: Copy,dependsOn: 'build') {
-	from "build/libs"
-	into "C:/Users/weebi/OneDrive/Desktop/random shit/MultiMC/instances/1.21.4/.minecraft/mods"
-	include "*.jar"
 }

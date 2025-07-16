@@ -17,7 +17,7 @@ import weebify.dptb2utils.DPTB2Utils;
 import java.util.List;
 
 public class NotificationToast implements Toast {
-    private static final Identifier TEXTURE = Identifier.ofVanilla("toast/advancement");
+    private static final Identifier TEXTURE = Identifier.of("minecraft", "toast/advancement");
     private static final Identifier ICON = Identifier.of(DPTB2Utils.MOD_ID, "textures/notif.png");
     public static final float DEFAULT_DURATION_MS = 8000;
     public static final float TITLE_PHASE_MS = 2500;
@@ -26,7 +26,6 @@ public class NotificationToast implements Toast {
     private final String description;
     private final int color;
     private boolean soundPlayed = false;
-    private Toast.Visibility visibility = Toast.Visibility.HIDE;
 
     public NotificationToast(String title, String description, int color) {
         this.title = title;
@@ -35,44 +34,36 @@ public class NotificationToast implements Toast {
     }
 
     @Override
-    public Visibility getVisibility() {
-        return this.visibility;
-    }
+    public Toast.Visibility draw(DrawContext context, ToastManager manager, long startTime) {
+        context.drawGuiTexture(TEXTURE, 0, 0, this.getWidth(), this.getHeight());
 
-    @Override
-    public void update(ToastManager manager, long time) {
-        if (!this.soundPlayed && time > 0) {
-            this.soundPlayed = true;
-            manager.getClient().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.ENTITY_PLAYER_LEVELUP, 1, 1));
-        }
-
-        this.visibility = time >= DEFAULT_DURATION_MS * manager.getNotificationDisplayTimeMultiplier() ? Toast.Visibility.HIDE : Toast.Visibility.SHOW;
-    }
-
-    @Override
-    public void draw(DrawContext context, TextRenderer textRenderer, long startTime) {
-        context.drawGuiTexture(RenderLayer::getGuiTextured, TEXTURE, 0, 0, this.getWidth(), this.getHeight());
-
-        List<OrderedText> list = textRenderer.wrapLines(StringVisitable.plain(this.description), 125);
+        List<OrderedText> list = manager.getClient().textRenderer.wrapLines(StringVisitable.plain(this.description), 125);
         if (list.size() == 1) {
-            context.drawText(textRenderer, this.title, 30, 7, this.color, false);
-            context.drawText(textRenderer, list.get(0), 30, 18, this.color, false);
+            context.drawText(manager.getClient().textRenderer, this.title, 30, 7, this.color, false);
+            context.drawText(manager.getClient().textRenderer, list.get(0), 30, 18, this.color, false);
         } else {
             if (startTime < TITLE_PHASE_MS) {
                 int k = MathHelper.floor(MathHelper.clamp((TITLE_PHASE_MS - startTime) / FADE_DURATION, 0.f, 1.f) * 255.f) << 24 | 67108864;
-                context.drawText(textRenderer, this.title, 30, 11, this.color & Colors.WHITE | k, false);
+                context.drawText(manager.getClient().textRenderer, this.title, 30, 11, this.color & Colors.WHITE | k, false);
             } else {
                 int k = MathHelper.floor(MathHelper.clamp((startTime - TITLE_PHASE_MS) / FADE_DURATION, 0.f, 1.f) * 252.f) << 24 | 67108864;
                 int l = this.getHeight() / 2 - list.size() * 9 / 2;
 
 
                 for (OrderedText orderedText : list) {
-                    context.drawText(textRenderer, orderedText, 30, l, this.color & Colors.WHITE | k, false);
+                    context.drawText(manager.getClient().textRenderer, orderedText, 30, l, this.color & Colors.WHITE | k, false);
                     l += 9;
                 }
             }
         }
 
-        context.drawTexture(RenderLayer::getGuiTextured, ICON, 8, 8, 0, 0, 16, 16, 16, 16, this.color & Colors.WHITE | 0xFF000000);
+        if (!this.soundPlayed && startTime > 0) {
+            this.soundPlayed = true;
+            manager.getClient().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.ENTITY_PLAYER_LEVELUP, 1, 1));
+        }
+
+
+        context.drawTexture(ICON, 8, 8, 0, 0, 16, 16, 16, 16, this.color & Colors.WHITE | 0xFF000000);
+        return startTime >= DEFAULT_DURATION_MS * manager.getNotificationDisplayTimeMultiplier() ? Toast.Visibility.HIDE : Toast.Visibility.SHOW;
     }
 }

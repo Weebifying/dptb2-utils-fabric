@@ -12,7 +12,8 @@ import net.minecraft.text.Text;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ScrollableBootsList extends ScrollableWidget {
+// Quite literally a carbon copy of ScrollableWidget from 1.21.4
+public class ScrollableBootsList extends BetterScrollableWidget {
     private final List<OrderedText> lines;
     private final TextRenderer textRenderer;
     private final int lineSpacing;
