@@ -1,6 +1,9 @@
 package weebify.dptb2utils.gui;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.sound.PositionedSoundInstance;
@@ -51,7 +54,7 @@ public class NotificationToast implements Toast {
 
     @Override
     public void draw(DrawContext context, TextRenderer textRenderer, long startTime) {
-        context.drawGuiTexture(RenderLayer::getGuiTextured, TEXTURE, 0, 0, this.getWidth(), this.getHeight());
+        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, TEXTURE, 0, 0, this.getWidth(), this.getHeight());
 
         List<OrderedText> list = textRenderer.wrapLines(StringVisitable.plain(this.description), 125);
         if (list.size() == 1) {
@@ -73,6 +76,6 @@ public class NotificationToast implements Toast {
             }
         }
 
-        context.drawTexture(RenderLayer::getGuiTextured, ICON, 8, 8, 0, 0, 16, 16, 16, 16, this.color & Colors.WHITE | 0xFF000000);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON, 8, 8, 0, 0, 16, 16, 16, 16, this.color & Colors.WHITE | 0xFF000000);
     }
 }
