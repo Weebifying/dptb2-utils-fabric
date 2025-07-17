@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.widget.ScrollableWidget;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,7 +83,7 @@ public class ScrollableBootsList extends ScrollableWidget {
                         lines.get(i),
                         getX() + 2,
                         drawY,
-                        0xFFFFFF
+                        Colors.WHITE
                 );
             }
         }

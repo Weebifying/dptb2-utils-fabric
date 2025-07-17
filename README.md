@@ -2,7 +2,9 @@
 An utility mod for the Hypixel Housing game **Don't Press The Button 2**
 
 ### Current supported versions:
-- Fabric 1.21.4+
+- Fabric 1.21.4
+- Fabric 1.21.7
+- Fabric 1.20.4
 
 # Features
 - **AutoCheer**: Automatically cheers when a community goal is reached.
