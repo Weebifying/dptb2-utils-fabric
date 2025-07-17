@@ -12,9 +12,9 @@ public class NotificationConfigScreen extends Screen {
     private final DPTB2Utils mod;
     public Screen parent;
 
-    public NotificationConfigScreen(Screen oarent, DPTB2Utils mod) {
+    public NotificationConfigScreen(Screen parent, DPTB2Utils mod) {
         super(Text.literal("Notification Settings"));
-        this.parent = oarent;
+        this.parent = parent;
         this.mod = mod;
     }
 
