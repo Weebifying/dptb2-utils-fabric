@@ -30,6 +30,7 @@ public class ModConfigs {
     public ModConfigs() {
         createNewConfig(notifsMap, notifsDefaultMap, "shopUpdate", "false", Boolean.class);
         createNewConfig(notifsMap, notifsDefaultMap, "bootsCollected", "false", Boolean.class);
+        createNewConfig(notifsMap, notifsDefaultMap, "slimeBoots", "true", Boolean.class);
         createNewConfig(notifsMap, notifsDefaultMap, "doorSwitch", "false", Boolean.class);
         createNewConfig(notifsMap, notifsDefaultMap, "buttonMayhem", "false", Boolean.class);
         createNewConfig(notifsMap, notifsDefaultMap, "buttonDisable", "false", Boolean.class);
