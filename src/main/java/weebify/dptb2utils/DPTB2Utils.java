@@ -9,11 +9,18 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.hud.InGameHud;
+import net.minecraft.client.network.ServerInfo;
 import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.scoreboard.*;
+import net.minecraft.scoreboard.number.StyledNumberFormat;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import weebify.dptb2utils.gui.NotificationToast;
 import weebify.dptb2utils.gui.screen.ModMenuScreen;
 import weebify.dptb2utils.utils.DelayedTask;
 
@@ -21,9 +28,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class DPTB2Utils implements ClientModInitializer {
 	public static final String MOD_ID = "dptb2-utils";
@@ -34,7 +39,8 @@ public class DPTB2Utils implements ClientModInitializer {
 	private long lastSaved;
 
 	private boolean displayScreen = false;
-	public boolean action = true;
+	public boolean isInDPTB2 = false;
+	public int buttonTimer = -1;
 	public List<DelayedTask> scheduledTasks = new ArrayList<>();
 
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
@@ -75,8 +81,56 @@ public class DPTB2Utils implements ClientModInitializer {
 	private void initializeEvents() {
 		ClientTickEvents.START_CLIENT_TICK.register(this::onClientTick);
 		ClientTickEvents.END_CLIENT_TICK.register((var) -> {
-			this.action = true;
 			scheduledTasks.removeIf(DelayedTask::tick);
+		});
+		// detecting whether the player is in DPTB2
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+			ServerInfo serverEntry = client.getCurrentServerEntry();
+			if (serverEntry == null) {
+				this.isInDPTB2 = false;
+				return;
+			}
+			if (!serverEntry.address.contains("hypixel.net")) {
+				this.isInDPTB2 = false;
+				return;
+			}
+
+			this.scheduleTask(20, () -> {
+				if (client.world == null) return;
+
+				Scoreboard scoreboard = client.world.getScoreboard();
+				ScoreboardObjective objective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+
+				if (objective != null) {
+					String title = objective.getDisplayName().getString().toLowerCase();
+					Text[] sidebarEntries =scoreboard.getScoreboardEntries(objective)
+							.stream()
+							.filter(score -> !score.hidden())
+							.sorted(Comparator.comparing(ScoreboardEntry::value).reversed().thenComparing(ScoreboardEntry::owner, String.CASE_INSENSITIVE_ORDER))
+							.map(scoreboardEntry -> {
+								Team team = scoreboard.getScoreHolderTeam(scoreboardEntry.owner());
+								Text textx = scoreboardEntry.name();
+                                return (Text) Team.decorateName(team, textx);
+							})
+							.toArray(Text[]::new);
+
+					StringBuilder s = new StringBuilder();
+					for (Text entry : sidebarEntries) {
+						s.append(entry.getString());
+					}
+
+					String content = s.toString().toLowerCase().replaceAll("§\\w", "");
+					LOGGER.info("Scoreboard title: {}", title);
+					LOGGER.info("Scoreboard content: {}", content);
+
+					this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
+					LOGGER.info("isInDPTB2: {}", this.isInDPTB2);
+					if (this.isInDPTB2) {
+						client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
+					}
+				}
+			});
+
 		});
 	}
 

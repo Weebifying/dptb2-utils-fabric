@@ -2,11 +2,15 @@ package weebify.dptb2utils.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatHud;
+import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.gui.hud.ChatHudLine;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.toast.ToastManager;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,28 +32,33 @@ public class ChatHudMixin {
     private static final Random rand = new Random();
 
     @Unique
-    private static void triggerNotif(String title, String message, int color) {
+    private static void triggerNotif(String title, String message, int color, SoundEvent sfx) {
+        DPTB2Utils mod = DPTB2Utils.getInstance();
         MinecraftClient mc = MinecraftClient.getInstance();
         ToastManager toastManager = mc.getToastManager();
-        toastManager.add(new NotificationToast(title, message, color));
+        if (mod.getNotifs("dontDelaySfx")) {
+            mc.getSoundManager().play(PositionedSoundInstance.master(sfx, 1, 1));
+        }
+        toastManager.add(new NotificationToast(title, message, color, mod.getNotifs("dontDelaySfx") ? null : sfx));
     }
 
     @Inject(method = "addVisibleMessage(Lnet/minecraft/client/gui/hud/ChatHudLine;)V", at = @At("HEAD"))
     private void addVisibleMessageInject(ChatHudLine message, CallbackInfo ci) {
         DPTB2Utils mod = DPTB2Utils.getInstance();
         MinecraftClient mc = MinecraftClient.getInstance();
-        
-        String content = message.content().getString().replaceAll("§[0-9a-fk-or]", "");
 
-        if (mod.getNotifs("shopUpdate") && content.contains("* SHOP! New items available at the Rotating Shop!")) {
-            triggerNotif("Shop Update!", "New items available at the Rotating Shop!", 0xFF55FF);
-        } else if (mod.getNotifs("buttonMayhem") && content.contains("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {
-            triggerNotif("Button Mayhem!", "The BUTTON has no cooldown for 10s!", 0xFF0000);
-        } else if (mod.getNotifs("buttonDisable") && content.contains("* [!] The BUTTON has been disabled for 5s!")) {
-            triggerNotif("Button Disabled!", "The BUTTON has been disabled for 5s!", 0x00FF00);
-        } else if (mod.getNotifs("buttonImmunity") && content.contains("* [!] Whoever clicks the BUTTON next will not die!")) {
-            triggerNotif("Button Immunity!", "Whoever clicks the BUTTON next will not die!", 0x55FFFF);
-        } else if (content.contains("* WOAH")) {
+        String content = message.content().getString().replaceAll("§[0-9a-fk-or]", "");
+        SoundEvent sound = SoundEvents.ENTITY_PLAYER_LEVELUP;
+
+        if (mod.getNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
+            triggerNotif("Shop Update!", "New items available at the Rotating Shop!", 0xFF55FF, sound);
+        } else if (mod.getNotifs("buttonMayhem") && content.startsWith("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {
+            triggerNotif("Button Mayhem!", "The BUTTON has no cooldown for 10s!", 0xFF0000, sound);
+        } else if (mod.getNotifs("buttonDisable") && content.startsWith("* [!] The BUTTON has been disabled for 5s!")) {
+            triggerNotif("Button Disabled!", "The BUTTON has been disabled for 5s!", 0x00FF00, sound);
+        } else if (mod.getNotifs("buttonImmunity") && content.startsWith("* [!] Whoever clicks the BUTTON next will not die!")) {
+            triggerNotif("Button Immunity!", "Whoever clicks the BUTTON next will not die!", 0x55FFFF, sound);
+        } else if (content.startsWith("* WOAH")) {
             if (mod.getNotifs("bootsCollected")) {
                 // placeholders in case shit goes down
                 String t = "Someone just found a rare boots!";
@@ -74,7 +83,7 @@ public class ChatHudMixin {
                 }
 
                 if (mod.getNotifs("slimeBoots") || !b.equalsIgnoreCase("Slime Boots")) {
-                    triggerNotif(b + " Found!", t, 0xFFFF55);
+                    triggerNotif(b + " Found!", t, 0xFFFF55, sound);
                 }
             }
 
@@ -83,11 +92,11 @@ public class ChatHudMixin {
                     .append(Text.literal(String.format("[%s] ", timestamp)).formatted(Formatting.GRAY)
                             .append(message.content()));
             mod.bootsList.add(text);
-        } else if (mod.getNotifs("doorSwitch") && content.contains("* [!] The DOOR has cycled! Which one is it now?")) {
-            triggerNotif("Door Switch!", "The DOOR has cycled! Which one is it now?", 0xFFAA00);
+        } else if (mod.getNotifs("doorSwitch") && content.startsWith("* [!] The DOOR has cycled! Which one is it now?")) {
+            triggerNotif("Door Switch!", "The DOOR has cycled! Which one is it now?", 0xFFAA00, sound);
         }
 
-        if (mod.getAutoCheer() && content.contains("* COMMUNITY GOAL!")) {
+        if (mod.getAutoCheer() && content.startsWith("* COMMUNITY GOAL!")) {
             if (mc.getNetworkHandler() != null) {
                 mod.scheduleTask(rand.nextInt(26) + 5, () -> mc.getNetworkHandler().sendChatCommand("cheer"));
             }

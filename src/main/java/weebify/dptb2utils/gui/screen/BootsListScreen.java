@@ -56,7 +56,6 @@ public class BootsListScreen extends Screen {
                      this.listWidget.getY() + this.listWidget.getHeight(), 0x33000000);
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width/2, 20, Colors.WHITE);
-
     }
 
     @Override
