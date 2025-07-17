@@ -56,7 +56,12 @@ public class NotificationsScreen extends Screen {
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
             assert this.client != null;
             this.client.setScreen(parent);
-        }).dimensions(this.width / 2 - 75, this.height - 30 - 10, 150, 20).build());
+        }).dimensions(this.width / 2 - 80 - 75, this.height - 30 - 10, 150, 20).build());
+
+        this.addDrawableChild(ButtonWidget.builder(Text.of("Notification Settings"), (btn) -> {
+            assert this.client != null;
+            this.client.setScreen(new NotificationConfigScreen(this, mod));
+        }).dimensions(this.width / 2 + 80 - 75, this.height - 30 - 10, 150, 20).build());
     }
 
     @Override

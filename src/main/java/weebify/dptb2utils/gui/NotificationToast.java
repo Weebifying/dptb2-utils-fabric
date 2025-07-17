@@ -6,12 +6,14 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.toast.Toast;
 import net.minecraft.client.toast.ToastManager;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
+import org.jetbrains.annotations.Nullable;
 import weebify.dptb2utils.DPTB2Utils;
 
 import java.util.List;
@@ -25,12 +27,14 @@ public class NotificationToast implements Toast {
     private final String title;
     private final String description;
     private final int color;
+    private final SoundEvent sfx;
     private boolean soundPlayed = false;
 
-    public NotificationToast(String title, String description, int color) {
+    public NotificationToast(String title, String description, int color, @Nullable SoundEvent sfx) {
         this.title = title;
         this.description = description;
         this.color = color;
+        this.sfx = sfx;
     }
 
     @Override
@@ -59,7 +63,9 @@ public class NotificationToast implements Toast {
 
         if (!this.soundPlayed && startTime > 0) {
             this.soundPlayed = true;
-            manager.getClient().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.ENTITY_PLAYER_LEVELUP, 1, 1));
+            if (this.sfx != null) {
+                manager.getClient().getSoundManager().play(PositionedSoundInstance.master(this.sfx, 1, 1));
+            }
         }
 
 
