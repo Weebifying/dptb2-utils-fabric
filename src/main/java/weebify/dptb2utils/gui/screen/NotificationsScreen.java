@@ -22,24 +22,32 @@ public class NotificationsScreen extends Screen {
             btn.setMessage(Text.of(String.format("Shop Update: %s", !mod.setNotifs("shopUpdate", !mod.getNotifs("shopUpdate")) ? "ON" : "OFF")));
         }).dimensions(this.width / 2 - 80 - 75, 75, 150, 20).build());
 
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Boots Tracking: %s", mod.getNotifs("bootsCollected") ? "ON" : "OFF")), (btn) -> {
-            btn.setMessage(Text.of(String.format("Boots Tracking: %s", !mod.setNotifs("bootsCollected", !mod.getNotifs("bootsCollected")) ? "ON" : "OFF")));
-        }).dimensions(this.width / 2 + 80 - 75, 75, 150, 20).build());
-
         this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("City Door Switch: %s", mod.getNotifs("doorSwitch") ? "ON" : "OFF")), (btn) -> {
             btn.setMessage(Text.of(String.format("City Door Switch: %s", !mod.setNotifs("doorSwitch", !mod.getNotifs("doorSwitch")) ? "ON" : "OFF")));
-        }).dimensions(this.width / 2 - 80 - 75, 100, 150, 20).build());
+        }).dimensions(this.width / 2 + 80 - 75, 75, 150, 20).build());
 
         this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Button Mayhem: %s", mod.getNotifs("buttonMayhem") ? "ON" : "OFF")), (btn) -> {
             btn.setMessage(Text.of(String.format("Button Mayhem: %s", !mod.setNotifs("buttonMayhem", !mod.getNotifs("buttonMayhem")) ? "ON" : "OFF")));
-        }).dimensions(this.width / 2 + 80 - 75, 100, 150, 20).build());
+        }).dimensions(this.width / 2 - 80 - 75, 100, 150, 20).build());
 
         this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Button Disabled: %s", mod.getNotifs("buttonDisable") ? "ON" : "OFF")), (btn) -> {
             btn.setMessage(Text.of(String.format("Button Disabled: %s", !mod.setNotifs("buttonDisable", !mod.getNotifs("buttonDisable")) ? "ON" : "OFF")));
-        }).dimensions(this.width / 2 - 80 - 75, 125, 150, 20).build());
+        }).dimensions(this.width / 2 + 80 - 75, 100, 150, 20).build());
 
         this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Button Immunity: %s", mod.getNotifs("buttonImmunity") ? "ON" : "OFF")), (btn) -> {
             btn.setMessage(Text.of(String.format("Button Immunity: %s", !mod.setNotifs("buttonImmunity", !mod.getNotifs("buttonImmunity")) ? "ON" : "OFF")));
+        }).dimensions(this.width / 2 - 80 - 75, 125, 150, 20).build());
+
+        ButtonWidget slimeBtn = ButtonWidget.builder(Text.of(String.format("Slime Boots Notify: %s", mod.getNotifs("slimeBoots") ? "ON" : "OFF")), (btn) -> {
+            btn.setMessage(Text.of(String.format("Slime Boots Notify: %s", !mod.setNotifs("slimeBoots", !mod.getNotifs("slimeBoots")) ? "ON" : "OFF")));
+        }).dimensions(this.width / 2 - 80 - 75, 150, 150, 20).build();
+        slimeBtn.active = mod.getNotifs("bootsCollected");
+        this.addDrawableChild(slimeBtn);
+
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Boots Tracking: %s", mod.getNotifs("bootsCollected") ? "ON" : "OFF")), (btn) -> {
+            boolean a = !mod.setNotifs("bootsCollected", !mod.getNotifs("bootsCollected"));
+            btn.setMessage(Text.of(String.format("Boots Tracking: %s", a ? "ON" : "OFF")));
+            slimeBtn.active = a;
         }).dimensions(this.width / 2 + 80 - 75, 125, 150, 20).build());
 
 

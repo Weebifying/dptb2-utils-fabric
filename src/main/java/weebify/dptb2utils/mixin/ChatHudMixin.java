@@ -46,33 +46,41 @@ public class ChatHudMixin {
             triggerNotif("Button Disabled!", "The BUTTON has been disabled for 5s!", 0x00FF00);
         } else if (mod.getNotifs("buttonImmunity") && content.startsWith("* [!] Whoever clicks the BUTTON next will not die!")) {
             triggerNotif("Button Immunity!", "Whoever clicks the BUTTON next will not die!", 0x55FFFF);
-        } else if (mod.getNotifs("bootsCollected") && content.startsWith("* WOAH!")) {
-            String t = content.substring(8);
-            Pattern pattern1 = Pattern.compile("\\* WOAH! \\[(\\w+)] (\\w+) just found ([A-Z]+) (.+?)! \\(([^)]+)\\)");
-            Pattern pattern2 = Pattern.compile("\\* WOAH! \\[(\\w+)] (\\w+) received (.+?) from an \\[Admin]");
-            Pattern pattern3 = Pattern.compile("\\* WOAH! \\[(\\w+)] (\\w+) just found (.+?)! \\(\\?\\?\\?\\)");
+        } else if (content.startsWith("* WOAH")) {
+            if (mod.getNotifs("bootsCollected")) {
+                // placeholders in case shit goes down
+                String t = "Someone just found a rare boots!";
+                String b = "Boots";
+                Pattern pattern1 = Pattern.compile("\\* WOAH!? \\[([\\w-]+)] (\\w+) just found ([A-Z]+) (.+?)!");
+                Pattern pattern2 = Pattern.compile("\\* WOAH!? \\[([\\w-]+)] (\\w+) received (.+?) from an \\[Admin]");
+                Pattern pattern3 = Pattern.compile("\\* WOAH!? \\[([\\w-]+)] (\\w+) just found (.+?)!");
 
-            Matcher matcher1 = pattern1.matcher(content);
-            Matcher matcher2 = pattern2.matcher(content);
-            Matcher matcher3 = pattern3.matcher(content);
+                Matcher matcher1 = pattern1.matcher(content);
+                Matcher matcher2 = pattern2.matcher(content);
+                Matcher matcher3 = pattern3.matcher(content);
 
-            if (matcher1.find()) {
-                t = String.format("[%s] %s found %s %s!", matcher1.group(1), matcher1.group(2), matcher1.group(3), matcher1.group(4));
-            } else if (matcher2.find()) {
-                t = String.format("[%s] %s received %s!", matcher2.group(1), matcher2.group(2), matcher2.group(3));
-            } else if (matcher3.find()) {
-                t = String.format("[%s] %s found %s!", matcher3.group(1), matcher3.group(2), matcher3.group(3));
+                if (matcher1.find()) {
+                    t = String.format("[%s] %s found %s %s!", matcher1.group(1), matcher1.group(2), matcher1.group(3), matcher1.group(4));
+                    b = matcher1.group(4);
+                } else if (matcher2.find()) {
+                    t = String.format("[%s] %s received %s!", matcher2.group(1), matcher2.group(2), matcher2.group(3));
+                    b = matcher2.group(3);
+                } else if (matcher3.find()) {
+                    t = String.format("[%s] %s found %s!", matcher3.group(1), matcher3.group(2), matcher3.group(3));
+                    b = matcher3.group(3);
+                }
+
+                if (mod.getNotifs("slimeBoots") || !b.equalsIgnoreCase("Slime Boots")) {
+                    triggerNotif(b + " Found!", t, 0xFFFF55);
+                }
             }
-
-            triggerNotif("Boots Found!", t, 0xFFFF55);
 
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             Text text = Text.empty()
                     .append(Text.literal(String.format("[%s] ", timestamp)).formatted(Formatting.GRAY)
                     .append(message));
             mod.bootsList.add(text);
-        }
-        else if (mod.getNotifs("doorSwitch") && content.startsWith("* [!] The DOOR has cycled! Which one is it now?")) {
+        } else if (mod.getNotifs("doorSwitch") && content.startsWith("* [!] The DOOR has cycled! Which one is it now?")) {
             triggerNotif("Door Switch!", "The DOOR has cycled! Which one is it now?", 0xFFAA00);
         }
 
