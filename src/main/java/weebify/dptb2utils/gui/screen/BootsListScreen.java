@@ -1,19 +1,12 @@
 package weebify.dptb2utils.gui.screen;
 
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ScrollableTextWidget;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import weebify.dptb2utils.DPTB2Utils;
 import weebify.dptb2utils.gui.ScrollableBootsList;
 
-import java.util.List;
 
 public class BootsListScreen extends Screen {
     private final DPTB2Utils mod;

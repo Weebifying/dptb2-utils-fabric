@@ -2,6 +2,8 @@ package weebify.dptb2utils.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatHud;
+import net.minecraft.client.gui.hud.ChatHudLine;
+import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.toast.ToastManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -32,22 +34,22 @@ public class ChatHudMixin {
         toastManager.add(new NotificationToast(title, message, color));
     }
 
-    @Inject(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At("HEAD"))
-    private void addMessageInject(Text message, CallbackInfo ci) {
+    @Inject(method = "addVisibleMessage(Lnet/minecraft/client/gui/hud/ChatHudLine;)V", at = @At("HEAD"))
+    private void addVisibleMessageInject(ChatHudLine message, CallbackInfo ci) {
         DPTB2Utils mod = DPTB2Utils.getInstance();
         MinecraftClient mc = MinecraftClient.getInstance();
+        
+        String content = message.content().getString().replaceAll("§[0-9a-fk-or]", "");
 
-        String content = message.getString().replaceAll("§[0-9a-fk-or]", "");
-
-        if (mod.getNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
+        if (mod.getNotifs("shopUpdate") && content.contains("* SHOP! New items available at the Rotating Shop!")) {
             triggerNotif("Shop Update!", "New items available at the Rotating Shop!", 0xFF55FF);
-        } else if (mod.getNotifs("buttonMayhem") && content.startsWith("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {
+        } else if (mod.getNotifs("buttonMayhem") && content.contains("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {
             triggerNotif("Button Mayhem!", "The BUTTON has no cooldown for 10s!", 0xFF0000);
-        } else if (mod.getNotifs("buttonDisable") && content.startsWith("* [!] The BUTTON has been disabled for 5s!")) {
+        } else if (mod.getNotifs("buttonDisable") && content.contains("* [!] The BUTTON has been disabled for 5s!")) {
             triggerNotif("Button Disabled!", "The BUTTON has been disabled for 5s!", 0x00FF00);
-        } else if (mod.getNotifs("buttonImmunity") && content.startsWith("* [!] Whoever clicks the BUTTON next will not die!")) {
+        } else if (mod.getNotifs("buttonImmunity") && content.contains("* [!] Whoever clicks the BUTTON next will not die!")) {
             triggerNotif("Button Immunity!", "Whoever clicks the BUTTON next will not die!", 0x55FFFF);
-        } else if (content.startsWith("* WOAH")) {
+        } else if (content.contains("* WOAH")) {
             if (mod.getNotifs("bootsCollected")) {
                 // placeholders in case shit goes down
                 String t = "Someone just found a rare boots!";
@@ -79,13 +81,13 @@ public class ChatHudMixin {
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             Text text = Text.empty()
                     .append(Text.literal(String.format("[%s] ", timestamp)).formatted(Formatting.GRAY)
-                    .append(message));
+                            .append(message.content()));
             mod.bootsList.add(text);
-        } else if (mod.getNotifs("doorSwitch") && content.startsWith("* [!] The DOOR has cycled! Which one is it now?")) {
+        } else if (mod.getNotifs("doorSwitch") && content.contains("* [!] The DOOR has cycled! Which one is it now?")) {
             triggerNotif("Door Switch!", "The DOOR has cycled! Which one is it now?", 0xFFAA00);
         }
 
-        if (mod.getAutoCheer() && content.startsWith("* COMMUNITY GOAL!")) {
+        if (mod.getAutoCheer() && content.contains("* COMMUNITY GOAL!")) {
             if (mc.getNetworkHandler() != null) {
                 mod.scheduleTask(rand.nextInt(26) + 5, () -> mc.getNetworkHandler().sendChatCommand("cheer"));
             }
