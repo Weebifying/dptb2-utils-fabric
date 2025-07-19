@@ -8,14 +8,14 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import weebify.dptb2utils.DPTB2Utils;
-import weebify.dptb2utils.gui.NotificationToast;
+import weebify.dptb2utils.gui.widget.NotificationToast;
+import weebify.dptb2utils.utils.ButtonTimerManager;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,10 +33,10 @@ public class ChatHudMixin {
         DPTB2Utils mod = DPTB2Utils.getInstance();
         MinecraftClient mc = MinecraftClient.getInstance();
         ToastManager toastManager = mc.getToastManager();
-        if (mod.getNotifs("dontDelaySfx")) {
+        if (mod.getBoolNotifs("dontDelaySfx")) {
             mc.getSoundManager().play(PositionedSoundInstance.master(sfx, 1, 1));
         }
-        toastManager.add(new NotificationToast(title, message, color, mod.getNotifs("dontDelaySfx") ? null : sfx));
+        toastManager.add(new NotificationToast(title, message, color, mod.getBoolNotifs("dontDelaySfx") ? null : sfx));
     }
 
     @Inject(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At("HEAD"))
@@ -47,16 +47,24 @@ public class ChatHudMixin {
         String content = message.getString().replaceAll("§[0-9a-fk-or]", "");
         SoundEvent sound = SoundEvents.ENTITY_PLAYER_LEVELUP;
 
-        if (mod.getNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
+        if (mod.getBoolNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
             triggerNotif("Shop Update!", "New items available at the Rotating Shop!", 0xFF55FF, sound);
-        } else if (mod.getNotifs("buttonMayhem") && content.startsWith("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {
-            triggerNotif("Button Mayhem!", "The BUTTON has no cooldown for 10s!", 0xFF0000, sound);
-        } else if (mod.getNotifs("buttonDisable") && content.startsWith("* [!] The BUTTON has been disabled for 5s!")) {
-            triggerNotif("Button Disabled!", "The BUTTON has been disabled for 5s!", 0x00FF00, sound);
-        } else if (mod.getNotifs("buttonImmunity") && content.startsWith("* [!] Whoever clicks the BUTTON next will not die!")) {
+        } else if (content.startsWith("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {
+            ButtonTimerManager.isMayhem = true;
+            mod.scheduleTask(200, () -> ButtonTimerManager.isMayhem = false);
+            if (mod.getBoolNotifs("buttonMayhem")) {
+                triggerNotif("Button Mayhem!", "The BUTTON has no cooldown for 10s!", 0xFF0000, sound);
+            }
+        } else if  (content.startsWith("* [!] The BUTTON has been disabled for 5s!")) {
+            ButtonTimerManager.isDisabled = true;
+            mod.scheduleTask(100, () -> ButtonTimerManager.isDisabled = false);
+            if (mod.getBoolNotifs("buttonDisable")) {
+                triggerNotif("Button Disabled!", "The BUTTON has been disabled for 5s!", 0x00FF00, sound);
+            }
+        } else if (mod.getBoolNotifs("buttonImmunity") && content.startsWith("* [!] Whoever clicks the BUTTON next will not die!")) {
             triggerNotif("Button Immunity!", "Whoever clicks the BUTTON next will not die!", 0x55FFFF, sound);
         } else if (content.startsWith("* WOAH")) {
-            if (mod.getNotifs("bootsCollected")) {
+            if (mod.getBoolNotifs("bootsCollected")) {
                 // placeholders in case shit goes down
                 String t = "Someone just found a rare boots!";
                 String b = "Boots";
@@ -79,7 +87,7 @@ public class ChatHudMixin {
                     b = matcher3.group(3);
                 }
 
-                if (mod.getNotifs("slimeBoots") || !b.equalsIgnoreCase("Slime Boots")) {
+                if (mod.getBoolNotifs("slimeBoots") || !b.equalsIgnoreCase("Slime Boots")) {
                     triggerNotif(b + " Found!", t, 0xFFFF55, sound);
                 }
             }
@@ -89,14 +97,31 @@ public class ChatHudMixin {
                     .append(Text.literal(String.format("[%s] ", timestamp)).formatted(Formatting.GRAY)
                     .append(message));
             mod.bootsList.add(text);
-        } else if (mod.getNotifs("doorSwitch") && content.startsWith("* [!] The DOOR has cycled! Which one is it now?")) {
+        } else if (mod.getBoolNotifs("doorSwitch") && content.startsWith("* [!] The DOOR has cycled! Which one is it now?")) {
             triggerNotif("Door Switch!", "The DOOR has cycled! Which one is it now?", 0xFFAA00, sound);
-        }
-
-        if (mod.getAutoCheer() && content.startsWith("* COMMUNITY GOAL!")) {
+        } else if (mod.getAutoCheer() && content.startsWith("* COMMUNITY GOAL!")) {
             if (mc.getNetworkHandler() != null) {
                 mod.scheduleTask(rand.nextInt(26) + 5, () -> mc.getNetworkHandler().sendChatCommand("cheer"));
             }
+        } else if (content.startsWith("* ➜ The BUTTON was just clicked")) {
+            ButtonTimerManager.buttonTimer = 0; // reset the button timer
+
+            // chaos button handling
+            if (content.endsWith("by CHAOS!")) {
+                if (ButtonTimerManager.isChaos) {
+                    ButtonTimerManager.chaosCounter -= 1;
+                    if (ButtonTimerManager.chaosCounter <= 0) {
+                        ButtonTimerManager.isChaos = false;
+                    }
+                } else {
+                    ButtonTimerManager.isChaos = true;
+                    ButtonTimerManager.chaosCounter = 35;
+                }
+            }
+        } else if (content.startsWith("*  MINOR EVENT! ➜ CHAOS BUTTON")) {
+            ButtonTimerManager.buttonTimer = 0;
+            ButtonTimerManager.isChaos = true;
+            ButtonTimerManager.chaosCounter = 36;
         }
     }
 }

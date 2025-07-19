@@ -32,6 +32,10 @@ public class ModMenuScreen extends Screen {
             mc.setScreen(new NotificationsScreen(this, mod));
         }).dimensions(this.width/2 - 80 - 75, 100, 150, 20).build());
 
+        this.addDrawableChild(ButtonWidget.builder(Text.of("Button Timer HUD"), (btn) -> {
+            mc.setScreen(new ButtonTimerConfigScreen(this, mod));
+        }).dimensions(this.width/2 + 80 - 75, 100, 150, 20).build());
+
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
             this.close();

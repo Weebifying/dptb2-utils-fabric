@@ -1,6 +1,7 @@
 package weebify.dptb2utils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.api.ClientModInitializer;
@@ -10,18 +11,22 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.scoreboard.*;
-import net.minecraft.scoreboard.number.StyledNumberFormat;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
+import net.minecraft.util.Formatting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import weebify.dptb2utils.gui.NotificationToast;
+import weebify.dptb2utils.gui.screen.ButtonTimerConfigScreen;
+import weebify.dptb2utils.gui.widget.NotificationToast;
 import weebify.dptb2utils.gui.screen.ModMenuScreen;
+import weebify.dptb2utils.utils.ButtonTimerManager;
 import weebify.dptb2utils.utils.DelayedTask;
 
 import java.io.File;
@@ -40,7 +45,7 @@ public class DPTB2Utils implements ClientModInitializer {
 
 	private boolean displayScreen = false;
 	public boolean isInDPTB2 = false;
-	public int buttonTimer = -1;
+	
 	public List<DelayedTask> scheduledTasks = new ArrayList<>();
 
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
@@ -85,6 +90,8 @@ public class DPTB2Utils implements ClientModInitializer {
 		});
 		// detecting whether the player is in DPTB2
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+			ButtonTimerManager.buttonTimer = -1; // reset button timer on join
+
 			ServerInfo serverEntry = client.getCurrentServerEntry();
 			if (serverEntry == null) {
 				this.isInDPTB2 = false;
@@ -120,18 +127,43 @@ public class DPTB2Utils implements ClientModInitializer {
 					}
 
 					String content = s.toString().toLowerCase().replaceAll("§\\w", "");
-					LOGGER.info("Scoreboard title: {}", title);
-					LOGGER.info("Scoreboard content: {}", content);
 
 					this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
-					LOGGER.info("isInDPTB2: {}", this.isInDPTB2);
+//					LOGGER.info("isInDPTB2 = {}", this.isInDPTB2);
 					if (this.isInDPTB2) {
 						client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
 					}
 				}
 			});
-
 		});
+
+		// button timer hud
+		HudRenderCallback.EVENT.register(((drawContext, renderTickCounter) -> {
+			MinecraftClient mc = MinecraftClient.getInstance();
+			if (this.isInDPTB2 && this.getButtonTimerEnabled() && !(mc.currentScreen instanceof ButtonTimerConfigScreen)) {
+				int width = mc.getWindow().getScaledWidth();
+				int height = mc.getWindow().getScaledHeight();
+				Text text = ButtonTimerManager.tickToTime(ButtonTimerManager.buttonTimer);
+				int textWidth = mc.textRenderer.getWidth(text);
+				if (this.getButtonTimerRenderBG()) {
+					drawContext.fill(
+							(int) (width*this.getButtonTimerConfigs("posX", Float.class)),
+							(int) (height*this.getButtonTimerConfigs("posY", Float.class)),
+							(int) (width*this.getButtonTimerConfigs("posX", Float.class)) + textWidth + 8,
+							(int) (height*this.getButtonTimerConfigs("posY", Float.class)) + 15,
+							0x63000000 // ballin it, worked ig
+					);
+				}
+
+				drawContext.drawText(
+						mc.textRenderer, text,
+						(int) (width*this.getButtonTimerConfigs("posX", Float.class)) + 4,
+						(int) (height*this.getButtonTimerConfigs("posY", Float.class)) + 4,
+						Colors.WHITE,
+						this.getButtonTimerTextShadow()
+				);
+			}
+		}));
 	}
 
 	private void initializeCommands() {
@@ -147,6 +179,12 @@ public class DPTB2Utils implements ClientModInitializer {
 		if (this.displayScreen) {
 			this.displayScreen = false;
 			mc.setScreen(new ModMenuScreen(this));
+		}
+
+		if (this.isInDPTB2) {
+			if (ButtonTimerManager.buttonTimer >= 0) {
+				ButtonTimerManager.buttonTimer += 1;
+			}
 		}
 	}
 
@@ -180,24 +218,59 @@ public class DPTB2Utils implements ClientModInitializer {
 		}
 	}
 
-	public boolean getAutoCheer() {
-		if (!this.config.othersMap.containsKey("autoCheer")) {
-			this.config.othersMap.put("autoCheer", ModConfigs.othersDefaultMap.get("autoCheer"));
+	public <T> T getConfig(Map<String, JsonElement> map, Map<String, JsonElement> defaultMap, String key, Class<T> clazz) {
+		if (!map.containsKey(key)) {
+			map.put(key, defaultMap.get(key));
 		}
-		return this.config.othersMap.get("autoCheer").getAsBoolean();
+		return GSON.fromJson(map.get(key), clazz);
 	}
-	public boolean getNotifs(String key) {
-		if (!this.config.notifsMap.containsKey(key)) {
-			this.config.notifsMap.put(key, ModConfigs.notifsDefaultMap.get(key));
-		}
-		return this.config.notifsMap.get(key).getAsBoolean();
+	public <T> T setConfig(Map<String, JsonElement> map, String key, T value, Class<T> clazz) {
+		JsonElement jsonValue = GSON.toJsonTree(value, clazz);
+		JsonElement oldValue = map.put(key, jsonValue);
+		return GSON.fromJson(oldValue, clazz);
+	}
+
+	public <T> T getNotifs(String key, Class<T> clazz) {
+		return this.getConfig(this.config.notifsMap, ModConfigs.notifsDefaultMap, key, clazz);
+	}
+	public <T> T getButtonTimerConfigs(String key, Class<T> clazz) {
+		return this.getConfig(this.config.buttonTimerMap, ModConfigs.buttonTimerDefaultMap, key, clazz);
+	}
+	public boolean getAutoCheer() {
+		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "autoCheer", Boolean.class);
+	}
+	public boolean getBoolNotifs(String key) {
+		return this.getNotifs(key, Boolean.class);
+	}
+	public boolean getButtonTimerEnabled() {
+		return this.getButtonTimerConfigs("enabled", Boolean.class);
+	}
+	public boolean getButtonTimerTextShadow() {
+		return this.getButtonTimerConfigs("textShadow", Boolean.class);
+	}
+	public boolean getButtonTimerRenderBG() {
+		return this.getButtonTimerConfigs("renderBackground", Boolean.class);
 	}
 
 	public boolean setAutoCheer(boolean value) {
-		return Objects.requireNonNull(this.config.othersMap.put("autoCheer", GSON.toJsonTree(value))).getAsBoolean();
+		return this.setConfig(this.config.othersMap, "autoCheer", value, Boolean.class);
 	}
-	public boolean setNotifs(String key, boolean value) {
-		return Objects.requireNonNull(this.config.notifsMap.put(key, GSON.toJsonTree(value))).getAsBoolean();
+	public <T> T setNotifs(String key, T value, Class<T> clazz) {
+		return this.setConfig(this.config.notifsMap, key, value, clazz);
 	}
-
+	public <T> T setButtonTimerConfigs(String key, T value, Class<T> clazz) {
+		return this.setConfig(this.config.buttonTimerMap, key, value, clazz);
+	}
+	public boolean setBoolNotifs(String key, boolean value) {
+		return this.setNotifs(key, value, Boolean.class);
+	}
+	public boolean setButtonTimerEnabled(boolean value) {
+		return this.setButtonTimerConfigs("enabled", value, Boolean.class);
+	}
+	public boolean setButtonTimerTextShadow(boolean value) {
+		return this.setButtonTimerConfigs("textShadow", value, Boolean.class);
+	}
+	public boolean setButtonTimerRenderBG(boolean value) {
+		return this.setButtonTimerConfigs("renderBackground", value, Boolean.class);
+	}
 }
