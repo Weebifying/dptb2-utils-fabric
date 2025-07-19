@@ -32,7 +32,7 @@ public class DraggableTextWidget extends ClickableWidget {
         if (mod.getButtonTimerRenderBG()) {
             context.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0x63000000);
         }
-        context.drawText(renderer, getMessage(), getX() + 4, getY() + 4, 0xFFFFFF, mod.getButtonTimerTextShadow());
+        context.drawText(renderer, getMessage(), getX() + 4, getY() + 4, 0xFFFFFFFF, mod.getButtonTimerTextShadow());
     }
 
     @Override
