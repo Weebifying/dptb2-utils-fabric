@@ -8,11 +8,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ModConfigs {
+    // TODO: a map specifically for class of properties
+
     public Map<String, JsonElement> notifsMap = new LinkedHashMap<>();
     public Map<String, JsonElement> othersMap = new LinkedHashMap<>();
+    public Map<String, JsonElement> buttonTimerMap = new LinkedHashMap<>();
 
     public static final Map<String, JsonElement> notifsDefaultMap = new LinkedHashMap<>();
     public static final Map<String, JsonElement> othersDefaultMap = new LinkedHashMap<>();
+    public static final Map<String, JsonElement> buttonTimerDefaultMap = new LinkedHashMap<>();
 
     static <T> void createNewConfig(Map<String, JsonElement> map, Map<String, JsonElement> defaultMap, String key, String defaultValue, Class<T> clazz) {
         Type type = TypeToken.get(clazz).getType();
@@ -39,5 +43,11 @@ public class ModConfigs {
         createNewConfig(notifsMap, notifsDefaultMap, "dontDelaySfx", "false", Boolean.class);
 
         createNewConfig(othersMap, othersDefaultMap, "autoCheer", "false", Boolean.class);
+
+        createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "enabled", "false", Boolean.class);
+        createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "textShadow", "false", Boolean.class);
+        createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "renderBackground", "true", Boolean.class);
+        createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "posX", "0.5", Float.class);
+        createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "posY", "0.5", Float.class);
     }
 }

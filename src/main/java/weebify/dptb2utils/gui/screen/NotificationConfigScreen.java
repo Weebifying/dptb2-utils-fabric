@@ -1,6 +1,5 @@
 package weebify.dptb2utils.gui.screen;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -12,21 +11,22 @@ public class NotificationConfigScreen extends Screen {
     private final DPTB2Utils mod;
     public Screen parent;
 
-    public NotificationConfigScreen(Screen oarent, DPTB2Utils mod) {
+    public NotificationConfigScreen(Screen parent, DPTB2Utils mod) {
         super(Text.literal("Notification Settings"));
-        this.parent = oarent;
+        this.parent = parent;
         this.mod = mod;
     }
 
     @Override
     protected void init() {
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Don't Delay Sounds: %s", mod.getNotifs("dontDelaySfx") ? "ON" : "OFF")), (btn) -> {
-            btn.setMessage(Text.of(String.format("Don't Delay Sounds: %s", !mod.setNotifs("dontDelaySfx", !mod.getNotifs("dontDelaySfx")) ? "ON" : "OFF")));
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Don't Delay Sounds: %s", mod.getBoolNotifs("dontDelaySfx") ? "ON" : "OFF")), (btn) -> {
+            btn.setMessage(Text.of(String.format("Don't Delay Sounds: %s", !mod.setBoolNotifs("dontDelaySfx", !mod.getBoolNotifs("dontDelaySfx")) ? "ON" : "OFF")));
         }).dimensions(this.width/2 - 80 - 75, 75, 150, 20).build());
 
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
-            this.close();
+            assert this.client != null;
+            this.client.setScreen(parent);
         }).dimensions(this.width / 2 - 75, this.height - 30 - 10, 150, 20).build());
     }
 

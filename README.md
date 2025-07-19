@@ -4,7 +4,6 @@ An utility mod for the Hypixel Housing game **Don't Press The Button 2**
 ### Current supported versions:
 - Fabric 1.21.4
 - Fabric 1.21.7
-- Fabric 1.20.4
 
 # Features
 - **AutoCheer**: Automatically cheers when a community goal is reached.
@@ -16,12 +15,13 @@ An utility mod for the Hypixel Housing game **Don't Press The Button 2**
     - Button Disabled: Button is disabled for 5s.
     - Button Immunity: Next person to press the button will not die.
 - **Boots Tracker**: Tracks the boots players have acquired in your current session.
+- **Button Timer**: HUD timer that shows how long ago the button was last pressed.
 - More coming soon...
 
 # Usage:
 Run `/dptb2` in the chat to open the mod menu.
 
-![img.png](img.png)
+![preview](preview.png)
 
 # Installation
 ### Pre-built package

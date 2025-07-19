@@ -1,4 +1,4 @@
-package weebify.dptb2utils.gui;
+package weebify.dptb2utils.gui.widget;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
