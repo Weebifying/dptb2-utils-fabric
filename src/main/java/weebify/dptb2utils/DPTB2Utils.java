@@ -97,7 +97,7 @@ public class DPTB2Utils implements ClientModInitializer {
 				this.isInDPTB2 = false;
 				return;
 			}
-			if (!serverEntry.address.contains("hypixel.net")) {
+			if (!serverEntry.address.toLowerCase().contains("hypixel.net")) {
 				this.isInDPTB2 = false;
 				return;
 			}
