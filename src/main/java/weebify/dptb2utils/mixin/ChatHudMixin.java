@@ -47,6 +47,10 @@ public class ChatHudMixin {
         String content = message.getString().replaceAll("§[0-9a-fk-or]", "");
         SoundEvent sound = SoundEvents.ENTITY_PLAYER_LEVELUP;
 
+        if (mod.isRamper) {
+            DPTB2Utils.websocketClient.sendModMessage("chat", content.replaceAll("[<@#>`]", ""));
+        }
+
         if (mod.getBoolNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
             triggerNotif("Shop Update!", "New items available at the Rotating Shop!", 0xFF55FF, sound);
         } else if (content.startsWith("* [!] MAYHEM! The BUTTON has no cooldown for 10s!")) {

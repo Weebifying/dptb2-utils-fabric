@@ -3,6 +3,7 @@ package weebify.dptb2utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.api.ClientModInitializer;
 
@@ -14,13 +15,14 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
+import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.client.toast.ToastManager;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.scoreboard.*;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
-import net.minecraft.util.Formatting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import weebify.dptb2utils.gui.screen.ButtonTimerConfigScreen;
@@ -28,6 +30,7 @@ import weebify.dptb2utils.gui.widget.NotificationToast;
 import weebify.dptb2utils.gui.screen.ModMenuScreen;
 import weebify.dptb2utils.utils.ButtonTimerManager;
 import weebify.dptb2utils.utils.DelayedTask;
+import weebify.dptb2utils.utils.DiscordWebSocketClient;
 
 import java.io.File;
 import java.io.FileReader;
@@ -45,12 +48,18 @@ public class DPTB2Utils implements ClientModInitializer {
 
 	private boolean displayScreen = false;
 	public boolean isInDPTB2 = false;
-	
+	public boolean isRamper = false;
+
 	public List<DelayedTask> scheduledTasks = new ArrayList<>();
 
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
-	public static final Gson GSON = new Gson();
 	private static DPTB2Utils instance;
+	public static final Gson GSON = new Gson();
+
+	private static final String HOST = "localhost";
+	private static final int PORT = 8765;
+	private static final String PATH = "/ws";
+	public static DiscordWebSocketClient websocketClient;
 
 	public List<Text> bootsList = new ArrayList<>();
 
@@ -130,9 +139,8 @@ public class DPTB2Utils implements ClientModInitializer {
 
 					this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
 //					LOGGER.info("isInDPTB2 = {}", this.isInDPTB2);
-					if (this.isInDPTB2) {
-						client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
-					}
+					if (this.isInDPTB2) client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
+					this.refreshRamperStatus();
 				}
 			});
 		});
@@ -168,6 +176,7 @@ public class DPTB2Utils implements ClientModInitializer {
 
 	private void initializeCommands() {
 		ClientCommandRegistrationCallback.EVENT.register(this::commandModMenu);
+//		ClientCommandRegistrationCallback.EVENT.register(this::commandBroadcast);
 	}
 
 	private void onClientTick(MinecraftClient var) {
@@ -196,6 +205,30 @@ public class DPTB2Utils implements ClientModInitializer {
 							return 1;
 						})
 		);
+	}
+
+//	private void commandBroadcast(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
+//		LiteralCommandNode<FabricClientCommandSource> c = dispatcher.register(
+//				ClientCommandManager.literal("broadcast")
+//						.then(ClientCommandManager.argument("message", StringArgumentType.greedyString()))
+//						.executes(context -> {
+//							String msg = StringArgumentType.getString(context, "message");
+//								websocketClient.sendModMessage(String.format("%s broadcast", mc.player != null ? mc.player.getGameProfile().getName() : "Unknown"), msg);
+//							return 1;
+//						})
+//		);
+//	}
+
+	public void refreshRamperStatus() {
+		if (this.isInDPTB2 && this.getDiscordRamper()) {
+			websocketClient = new DiscordWebSocketClient(String.format("ws://%s:%d%s", HOST, PORT, PATH));
+			websocketClient.connect();
+		} else {
+			this.isRamper = false;
+			if (websocketClient != null && websocketClient.isOpen()) {
+				websocketClient.close();
+			}
+		}
 	}
 
 	public void saveSettings() {
@@ -239,6 +272,10 @@ public class DPTB2Utils implements ClientModInitializer {
 	public boolean getAutoCheer() {
 		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "autoCheer", Boolean.class);
 	}
+	public boolean getDiscordRamper() {
+		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "discordRamper", Boolean.class);
+	}
+
 	public boolean getBoolNotifs(String key) {
 		return this.getNotifs(key, Boolean.class);
 	}
@@ -254,6 +291,9 @@ public class DPTB2Utils implements ClientModInitializer {
 
 	public boolean setAutoCheer(boolean value) {
 		return this.setConfig(this.config.othersMap, "autoCheer", value, Boolean.class);
+	}
+	public boolean setDiscordRamper(boolean value) {
+		return this.setConfig(this.config.othersMap, "discordRamper", value, Boolean.class);
 	}
 	public <T> T setNotifs(String key, T value, Class<T> clazz) {
 		return this.setConfig(this.config.notifsMap, key, value, clazz);

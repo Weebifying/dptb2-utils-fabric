@@ -36,6 +36,11 @@ public class ModMenuScreen extends Screen {
             mc.setScreen(new ButtonTimerConfigScreen(this, mod));
         }).dimensions(this.width/2 + 80 - 75, 100, 150, 20).build());
 
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Allow Chat Ramp: %s", mod.getDiscordRamper() ? "ON" : "OFF")), (btn) -> {
+            btn.setMessage(Text.of(String.format("Allow Chat Ramp: %s", !mod.setDiscordRamper(!mod.getDiscordRamper()) ? "ON" : "OFF")));
+            mod.refreshRamperStatus();
+        }).dimensions(this.width/2 - 80 - 75, 125, 150, 20).build());
+
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
             this.close();
