@@ -27,6 +27,8 @@ import java.util.regex.Pattern;
 public class ChatHudMixin {
     @Unique
     private static final Random rand = new Random();
+    @Unique
+    private static boolean isTravel = false;
 
     @Unique
     private static void triggerNotif(String title, String message, int color, SoundEvent sfx) {
@@ -44,11 +46,62 @@ public class ChatHudMixin {
         DPTB2Utils mod = DPTB2Utils.getInstance();
         MinecraftClient mc = MinecraftClient.getInstance();
 
-        String content = message.getString().replaceAll("§[0-9a-fk-or]", "");
+        String content = message.getString().replaceAll("§[0-9a-fk-or]", "").trim();
         SoundEvent sound = SoundEvents.ENTITY_PLAYER_LEVELUP;
 
-        if (mod.isRamper) {
-            DPTB2Utils.websocketClient.sendModMessage("chat", content.replaceAll("[<@#>`]", ""));
+        if (mod.isRamper && !content.isBlank()) {
+            // inclusion
+            if
+            (
+                    content.matches("[^:]+:.+")
+                 || content.matches("\\* .+")
+            ) {
+                // exclusion
+                if
+                (
+                        content.startsWith("*   SEWER TRAVEL!")
+                     || content.startsWith("*   CANNON!")
+                ) {
+                    isTravel = true;
+                } else if
+                (
+                        !content.startsWith("* TIP!")
+                     && !content.startsWith("* DISCORD!")
+                     && !content.startsWith("* LOOTBOX!")
+                     && !content.startsWith("* Reward:")
+                     && !content.startsWith("* Error! You have already claimed")
+                     && !content.startsWith("* Time until next daily reward:")
+                     && !content.startsWith("* YAY!")
+                     && !content.startsWith("* UH OH...")
+                     && !content.startsWith("* BETTER HURRY!")
+                     && !content.startsWith("* FINAL STRETCH!")
+                     && !content.startsWith("* OH NO!")
+                     && !content.startsWith("* Run started!")
+                     && !content.startsWith("* Whoah!")
+                     && !content.startsWith("* Welcome to 7/11!")
+                     && !content.startsWith("* -----") // wrappers
+                     && !content.startsWith("* You earned")
+                     && !content.startsWith("*   CONGRATS! You made it to the end!")
+                     && !content.startsWith("*   With a time of")
+                     && !content.startsWith("* COMPLETION STREAK!")
+                     && !content.startsWith("* [!] You are now on a")
+                     && !content.startsWith("* ➜ Get another Completion in the next")
+                     && !content.startsWith("* --- LEGENDARY GAMES")
+                     && !content.startsWith("* Join our Discord")
+                     && !content.startsWith("* https://")
+                     && !content.startsWith("* Apply for staff")
+                     && !content.matches("\\* [0-9,]+⛂ Gold & [0-9,]+xp from that Completion Streak!")
+                     && !content.matches("\\* Successfully converted [0-9,]+⛂ gold into stat form!")
+                     && !content.matches("\\* Total: [0-9,]+⛂ Gold")
+                     && !(Pattern.compile("\\* \\+[0-9,]+⛂").matcher(content).find())
+                ) {
+                    if (isTravel) {
+                        isTravel = false;
+                    } else {
+                        DPTB2Utils.websocketClient.sendModMessage("chat", message.getString());
+                    }
+                }
+            }
         }
 
         if (mod.getBoolNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
@@ -119,13 +172,13 @@ public class ChatHudMixin {
                     }
                 } else {
                     ButtonTimerManager.isChaos = true;
-                    ButtonTimerManager.chaosCounter = 35;
+                    ButtonTimerManager.chaosCounter = 32;
                 }
             }
-        } else if (content.startsWith("*  MINOR EVENT! ➜ CHAOS BUTTON")) {
+        } else if (content.startsWith("*   MINOR EVENT! ➜ CHAOS BUTTON")) {
             ButtonTimerManager.buttonTimer = 0;
             ButtonTimerManager.isChaos = true;
-            ButtonTimerManager.chaosCounter = 36;
+            ButtonTimerManager.chaosCounter = 33;
         }
     }
 }

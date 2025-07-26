@@ -23,9 +23,7 @@ public class DiscordWebSocketClient extends WebSocketClient {
     // run when the connection is established
     @Override
     public void onOpen(ServerHandshake handshakedata) {
-        if (MC.player != null) {
-            send(GSON.toJson(Map.of("type", "greet", "text",  MC.player.getName().getString())));
-        }
+        MC.getToastManager().add(new NotificationToast("DPTBot", "Connected!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
     }
 
     // run when a message is received from the server
@@ -36,23 +34,27 @@ public class DiscordWebSocketClient extends WebSocketClient {
         String text = (String) data.get("text");
         MinecraftClient.getInstance().execute(() -> {
                 if (type.equalsIgnoreCase("delegate")) {
-                    if (MOD.getDiscordRamper()) {
-                        MinecraftClient.getInstance().getToastManager().add(new NotificationToast("Chat Ramp", "You are now the chat ramper!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
+                    if (MOD.getDiscordRamper() && MC.player != null) {
+                        MinecraftClient.getInstance().getToastManager().add(new NotificationToast("DPTBot", "You are now the chat ramper!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
                         MOD.isRamper = true;
+                        this.sendModMessage("confirm", MC.player.getGameProfile().getName());
                     }
                 } else if (type.equalsIgnoreCase("broadcast")) {
-                    MinecraftClient.getInstance().getToastManager().add(new NotificationToast("Discord Broadcast", text, 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
+                    String name = data.get("name") != null ? (String) data.get("name") : "Anonymous";
+                    MinecraftClient.getInstance().getToastManager().add(new NotificationToast(String.format("From %s", name), text, 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
                 }
         });
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
+        MC.getToastManager().add(new NotificationToast("DPTBot", "Disconnected!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
         DPTB2Utils.LOGGER.error("WebSocket connection closed: {} (code: {}, remote: {})", reason, code, remote);
     }
 
     @Override
     public void onError(Exception ex) {
+        MC.getToastManager().add(new NotificationToast("DPTBot", "Disconnected!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
         ex.printStackTrace();
     }
 

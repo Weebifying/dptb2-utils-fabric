@@ -2,14 +2,18 @@ package weebify.dptb2utils.gui.screen;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.EditBox;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.EditBoxWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import weebify.dptb2utils.DPTB2Utils;
 
 public class ModMenuScreen extends Screen {
     private final DPTB2Utils mod;
+    private EditBoxWidget host;
+    private EditBoxWidget port;
 
     public ModMenuScreen(DPTB2Utils mod) {
         super(Text.literal("DPTB2 Utils"));
@@ -41,6 +45,13 @@ public class ModMenuScreen extends Screen {
             mod.refreshRamperStatus();
         }).dimensions(this.width/2 - 80 - 75, 125, 150, 20).build());
 
+        this.host = new EditBoxWidget(this.textRenderer, this.width / 2 - 80 - 75, 150, 150, 20, Text.of("Websocket Host"), Text.of(DPTB2Utils.HOST));
+        this.host.setText(DPTB2Utils.HOST);
+        this.addDrawableChild(this.host);
+
+        this.port = new EditBoxWidget(this.textRenderer, this.width / 2 + 80 - 75, 150, 150, 20, Text.of("Websocket Port"), Text.of(Integer.toString(DPTB2Utils.PORT)));
+        this.port.setText(Integer.toString(DPTB2Utils.PORT));
+        this.addDrawableChild(this.port);
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
             this.close();
@@ -54,8 +65,21 @@ public class ModMenuScreen extends Screen {
 
     @Override
     public void close() {
+        DPTB2Utils.HOST = this.host.getText();
+        DPTB2Utils.PORT = Integer.parseInt(this.port.getText());
         this.mod.saveSettings();
         super.close();
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        DPTB2Utils.HOST = this.host.getText();
+        try {
+            DPTB2Utils.PORT = Integer.parseInt(this.port.getText());
+        } catch (NumberFormatException e) {
+            // :)
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

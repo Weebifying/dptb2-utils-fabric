@@ -56,9 +56,8 @@ public class DPTB2Utils implements ClientModInitializer {
 	private static DPTB2Utils instance;
 	public static final Gson GSON = new Gson();
 
-	private static final String HOST = "localhost";
-	private static final int PORT = 8765;
-	private static final String PATH = "/ws";
+	public static String HOST = "79.99.40.71";
+	public static int PORT = 6426;
 	public static DiscordWebSocketClient websocketClient;
 
 	public List<Text> bootsList = new ArrayList<>();
@@ -221,11 +220,13 @@ public class DPTB2Utils implements ClientModInitializer {
 
 	public void refreshRamperStatus() {
 		if (this.isInDPTB2 && this.getDiscordRamper()) {
-			websocketClient = new DiscordWebSocketClient(String.format("ws://%s:%d%s", HOST, PORT, PATH));
+			LOGGER.info("Attempting Websocket connection to ws://{}:{}", HOST, PORT);
+			websocketClient = new DiscordWebSocketClient(String.format("ws://%s:%s", HOST, PORT));
 			websocketClient.connect();
 		} else {
 			this.isRamper = false;
 			if (websocketClient != null && websocketClient.isOpen()) {
+				LOGGER.info("Closing Websocket connection to ws://{}:{}", HOST, PORT);
 				websocketClient.close();
 			}
 		}
