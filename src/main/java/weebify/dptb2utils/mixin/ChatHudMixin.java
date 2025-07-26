@@ -22,6 +22,8 @@ import weebify.dptb2utils.utils.ButtonTimerManager;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +32,12 @@ import java.util.regex.Pattern;
 public class ChatHudMixin {
     @Unique
     private static final Random rand = new Random();
+    @Unique
+    private static boolean isTravel = false;
+    @Unique
+    private static int counter = 0;
+    @Unique
+    private static List<String> bulks = new ArrayList<>();
 
     @Unique
     private static void triggerNotif(String title, String message, int color, SoundEvent sfx) {
@@ -49,6 +57,25 @@ public class ChatHudMixin {
 
         String content = message.content().getString().replaceAll("§[0-9a-fk-or]", "");
         SoundEvent sound = SoundEvents.ENTITY_PLAYER_LEVELUP;
+
+        if (mod.isRamper && !content.isBlank()) {
+            // inclusion
+            if (content.matches("[^:]+:.+") && !content.startsWith("* ")) {
+                if
+                (
+                        !content.startsWith("From ")
+                     && !content.startsWith("To ")
+                     && !content.startsWith("Party >")
+                     && !content.startsWith("Guild >")
+                     && !content.startsWith("Officer >")
+                     && !content.startsWith("You'll be ")
+                ) {
+                    DPTB2Utils.websocketClient.sendModMessage("chat", message.getString());
+                }
+            } else if (content.matches("\\* .+")) {
+                handleSystemMessage(content, message.content().getString());
+            }
+        }
 
         if (mod.getBoolNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
             triggerNotif("Shop Update!", "New items available at the Rotating Shop!", 0xFF55FF, sound);
@@ -118,13 +145,117 @@ public class ChatHudMixin {
                     }
                 } else {
                     ButtonTimerManager.isChaos = true;
-                    ButtonTimerManager.chaosCounter = 35;
+                    ButtonTimerManager.chaosCounter = 32;
                 }
             }
-        } else if (content.startsWith("*  MINOR EVENT! ➜ CHAOS BUTTON")) {
+        } else if (content.startsWith("*   MINOR EVENT! ➜ CHAOS BUTTON")) {
             ButtonTimerManager.buttonTimer = 0;
             ButtonTimerManager.isChaos = true;
-            ButtonTimerManager.chaosCounter = 36;
+            ButtonTimerManager.chaosCounter = 33;
+        }
+    }
+
+    @Unique
+    private static void handleSystemMessage(String content, String message) {
+        // number of lines
+             if (content.startsWith("*   MINOR EVENT! ➜ SANDSTORM"))                            counter = 5;
+        else if (content.startsWith("*   The SANDSTORM has ended!"))                            counter = 1;
+        else if (content.startsWith("*   MINOR EVENT! ➜ HEAT WAVE"))                            counter = 5;
+        else if (content.startsWith("*   MINOR EVENT! ➜ CHAOS BUTTON"))                         counter = 5;
+        else if (content.startsWith("*   MINOR EVENT! ➜ DON'T PRESS THE BUTTON (literally)"))   counter = 6;
+        else if (content.startsWith("*   GG! The BUTTON was not pressed for 45s!"))             counter = 3;
+        else if (content.startsWith("*   MEGA EVENT! ➜ RAFFLE"))                                counter = 4;
+        else if (content.startsWith("*   The BANK is now off cooldown!"))                       counter = 1;
+        else if (content.startsWith("*   THE BANK HAS BEEN BROKEN INTO!"))                      counter = 2;
+        else if (content.startsWith("*   THE BANK HAS CLOSED!"))                                counter = 3;
+        else if (content.startsWith("*   BANK HEIST SUCCESS!"))                                 counter = 3;
+        else if (content.startsWith("*   PARKOUR CIVILIZATION Challenge complete!"))            counter = 8;
+        else if (content.startsWith("*   MEGA EVENT! ➜ DERBY"))                                 counter = 5;
+        else if (content.startsWith("*  MEGA EVENT! ➜ DERBY"))                                  counter = 3;
+        else if (content.startsWith("*   THE DERBY HAS ENDED!"))                                counter = 6;
+        else if (content.startsWith("*   MEGA EVENT! ➜ GANG WARFARE"))                          counter = 4;
+        else if (content.startsWith("*   The GANG WARFARE has ended!"))                         counter = 3;
+
+        if (counter > 0) {
+            bulks.add(message);
+            if (content.matches("\\* {3}Starting in [0-9,]+s!")) {
+                counter = 0;
+            } else {
+                counter--;
+            }
+        }
+
+        if (counter == 0) {
+            if (!bulks.isEmpty()) {
+                String bulkMessage = String.join("\n", bulks);
+                bulks.clear();
+                DPTB2Utils.websocketClient.sendModMessage("chat", String.format("* \n%s\n* ", bulkMessage));
+                return;
+            }
+
+            if (content.startsWith("*   SEWER TRAVEL!") || content.startsWith("*   CANNON")) {
+                isTravel = true;
+                return;
+            }
+            if
+            (
+                    !content.contains("is currently on cooldown!")
+                 && !content.contains("is on Cooldown!")
+                 && !content.startsWith("* [STATS]")
+                 && !content.startsWith("*  - ")
+                 && !content.startsWith("* OOPS")
+                 && !content.startsWith("* TIP")
+                 && !content.startsWith("* DISCORD")
+                 && !content.startsWith("* SETTINGS")
+                 && !content.startsWith("* LOOTBOX")
+                 && !content.startsWith("* CHA CHING")
+                 && !content.startsWith("* THANK YOU")
+                 && !content.startsWith("*   GOOD JOB")
+                 && !content.startsWith("* Reward")
+                 && !content.startsWith("* Error")
+                 && !content.startsWith("* Time until next daily reward:")
+                 && !content.startsWith("* YAY")
+                 && !content.startsWith("* SORRY")
+                 && !content.startsWith("*   AFK")
+                 && !content.startsWith("* UH OH...")
+                 && !content.startsWith("* BETTER HURRY!")
+                 && !content.startsWith("* FINAL STRETCH!")
+                 && !content.startsWith("* OH NO!")
+                 && !content.startsWith("* Run started!")
+                 && !content.startsWith("* Whoah!")
+                 && !content.startsWith("* OUCH!")
+                 && !content.startsWith("* Welcome to 7/11!")
+                 && !content.startsWith("* -----") // wrappers
+                 && !content.startsWith("* SHOP! You received")
+                 && !content.startsWith("*   You got")
+                 && !content.startsWith("*   Take ")
+                 && !content.startsWith("*   You obtained ")
+                 && !content.startsWith("* You have claimed")
+                 && !content.startsWith("* You are now on a")
+                 && !content.startsWith("* Log back on in")
+                 && !content.startsWith("* You earned")
+                 && !content.startsWith("* You have been")
+                 && !content.startsWith("* The button is currently on cooldown")
+                 && !content.startsWith("* [!] You consumed the Immune Apple")
+                 && !content.startsWith("*   CONGRATS! You made it to the end!")
+                 && !content.startsWith("*   With a time of")
+                 && !content.startsWith("* COMPLETION STREAK!")
+                 && !content.startsWith("* [!] You are now on a")
+                 && !content.startsWith("* ➜ Get another Completion in the next")
+                 && !content.startsWith("* --- LEGENDARY GAMES")
+                 && !content.startsWith("* Join our Discord")
+                 && !content.startsWith("* https://")
+                 && !content.startsWith("* Apply for staff")
+                 && !content.matches("\\* [0-9,]+⛂ Gold & [0-9,]+xp from that Completion Streak!")
+                 && !content.matches("\\* Successfully converted [0-9,]+⛂ gold into stat form!")
+                 && !content.matches("\\* Total: [0-9,]+⛂ Gold")
+                 && !(Pattern.compile("\\* \\+[0-9,]+⛂").matcher(content).find())
+            ) {
+                if (isTravel) isTravel = false;
+                else {
+                    DPTB2Utils.websocketClient.sendModMessage("chat", message);
+                }
+            }
         }
     }
 }

@@ -43,6 +43,7 @@ public class ModConfigs {
         createNewConfig(notifsMap, notifsDefaultMap, "dontDelaySfx", "false", Boolean.class);
 
         createNewConfig(othersMap, othersDefaultMap, "autoCheer", "false", Boolean.class);
+        createNewConfig(othersMap, othersDefaultMap, "discordRamper", "true", Boolean.class);
 
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "enabled", "false", Boolean.class);
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "textShadow", "false", Boolean.class);
