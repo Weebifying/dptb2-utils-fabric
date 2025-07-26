@@ -45,11 +45,11 @@ public class ModMenuScreen extends Screen {
             mod.refreshRamperStatus();
         }).dimensions(this.width/2 - 80 - 75, 125, 150, 20).build());
 
-        this.host = new EditBoxWidget(this.textRenderer, this.width / 2 - 80 - 75, 150, 150, 20, Text.of("Websocket Host"), Text.of(DPTB2Utils.HOST));
+        this.host = EditBoxWidget.builder().x(this.width / 2 - 80 - 75).y(150).placeholder(Text.of("Websocket Host")).build(this.textRenderer, 150, 20, Text.of(DPTB2Utils.HOST));
         this.host.setText(DPTB2Utils.HOST);
         this.addDrawableChild(this.host);
 
-        this.port = new EditBoxWidget(this.textRenderer, this.width / 2 + 80 - 75, 150, 150, 20, Text.of("Websocket Port"), Text.of(Integer.toString(DPTB2Utils.PORT)));
+        this.port = EditBoxWidget.builder().x(this.width / 2 + 80 - 75).y(150).placeholder(Text.of("Websocket Host")).build(this.textRenderer, 150, 20, Text.of(Integer.toString(DPTB2Utils.PORT)));
         this.port.setText(Integer.toString(DPTB2Utils.PORT));
         this.addDrawableChild(this.port);
 
