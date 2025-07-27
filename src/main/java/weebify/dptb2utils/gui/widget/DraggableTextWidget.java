@@ -6,6 +6,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
+import net.minecraft.util.Colors;
 import weebify.dptb2utils.DPTB2Utils;
 
 public class DraggableTextWidget extends ClickableWidget {
@@ -32,7 +33,7 @@ public class DraggableTextWidget extends ClickableWidget {
         if (mod.getButtonTimerRenderBG()) {
             context.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0x63000000);
         }
-        context.drawText(renderer, getMessage(), getX() + 4, getY() + 4, 0xFFFFFFFF, mod.getButtonTimerTextShadow());
+        context.drawText(renderer, getMessage(), getX() + 4, getY() + 4, Colors.WHITE, mod.getButtonTimerTextShadow());
     }
 
     @Override
