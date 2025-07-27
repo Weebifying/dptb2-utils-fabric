@@ -1,11 +1,11 @@
 package weebify.dptb2utils.gui.widget;
 
+import net.minecraft.client.MinecraftClient;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.toast.Toast;
 import net.minecraft.client.toast.ToastManager;
@@ -23,9 +23,12 @@ import java.util.List;
 public class NotificationToast implements Toast {
     private static final Identifier TEXTURE = Identifier.ofVanilla("toast/advancement");
     private static final Identifier ICON = Identifier.of(DPTB2Utils.MOD_ID, "textures/notif.png");
-    public static final float DEFAULT_DURATION_MS = 8000;
     public static final float TITLE_PHASE_MS = 2500;
+    public static final float DESC_PHASE_MS = 4000;
     public static final float FADE_DURATION = 300;
+    public static final float END_DURATION = 2000;
+    private float duration;
+
     private final String title;
     private final String description;
     private final int color;
@@ -38,6 +41,14 @@ public class NotificationToast implements Toast {
         this.description = description;
         this.color = color;
         this.sfx = sfx;
+
+        List<OrderedText> list = MinecraftClient.getInstance().textRenderer.wrapLines(StringVisitable.plain(this.description), 125);
+
+        if (list.size() == 1) {
+            this.duration = DESC_PHASE_MS + END_DURATION;
+        } else {
+            this.duration = TITLE_PHASE_MS + DESC_PHASE_MS * MathHelper.ceil(list.size() / 2.f) + END_DURATION;
+        }
     }
 
     @Override
@@ -54,7 +65,7 @@ public class NotificationToast implements Toast {
             }
         }
 
-        this.visibility = time >= DEFAULT_DURATION_MS * manager.getNotificationDisplayTimeMultiplier() ? Toast.Visibility.HIDE : Toast.Visibility.SHOW;
+        this.visibility = time >= duration * manager.getNotificationDisplayTimeMultiplier() ? Toast.Visibility.HIDE : Toast.Visibility.SHOW;
     }
 
     @Override
@@ -67,17 +78,33 @@ public class NotificationToast implements Toast {
             context.drawText(textRenderer, list.get(0), 30, 18, this.color, false);
         } else {
             if (startTime < TITLE_PHASE_MS) {
-                int k = MathHelper.floor(MathHelper.clamp((TITLE_PHASE_MS - startTime) / FADE_DURATION, 0.f, 1.f) * 255.f) << 24 | 67108864;
-                context.drawText(textRenderer, this.title, 30, 11, this.color & Colors.WHITE | k, false);
+                int k = MathHelper.floor(MathHelper.clamp((TITLE_PHASE_MS - startTime) / FADE_DURATION, 0.f, 1.f) * 255.f) << 24 | 0x04000000;
+                context.drawText(textRenderer, this.title, 30, 11, this.color & 0x00FFFFFF | k, false);
             } else {
-                int k = MathHelper.floor(MathHelper.clamp((startTime - TITLE_PHASE_MS) / FADE_DURATION, 0.f, 1.f) * 252.f) << 24 | 67108864;
-                int l = this.getHeight() / 2 - list.size() * 9 / 2;
+                int k = MathHelper.floor(MathHelper.clamp((startTime - TITLE_PHASE_MS) / FADE_DURATION, 0.f, 1.f) * 255.f) << 24 | 0x04000000;
+                int size = list.size();
+                int n = (size + 1) / 2;
+                long elaspedDesc = (long) (startTime - TITLE_PHASE_MS);
+                int page = (int) Math.min(elaspedDesc / DESC_PHASE_MS, n - 1);
 
+                int firstLineIndex = page * 2;
+                int lineHeight = 9;
+                int y = this.getHeight() / 2 - lineHeight;
 
-                for (OrderedText orderedText : list) {
-                    context.drawText(textRenderer, orderedText, 30, l, this.color & Colors.WHITE | k, false);
-                    l += 9;
+                for (int i = 0; i < 2; i++) {
+                    int idx = firstLineIndex + i;
+                    if (idx < size) {
+                        context.drawText(textRenderer, list.get(idx), 30, y, this.color & 0x00FFFFFF | k, false);
+                        y += lineHeight;
+                    }
                 }
+
+//                int l = this.getHeight() / 2 - list.size() * 9 / 2;
+//
+//                for (OrderedText orderedText : list) {
+//                    context.drawText(textRenderer, orderedText, 30, l, this.color & 0x00FFFFFF | k, false);
+//                    l += 9;
+//                }
             }
         }
 
