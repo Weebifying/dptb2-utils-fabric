@@ -3,11 +3,13 @@ package weebify.dptb2utils.utils;
 import com.google.gson.Gson;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Colors;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import weebify.dptb2utils.DPTB2Utils;
 import weebify.dptb2utils.gui.widget.NotificationToast;
 
+import java.util.List;
 import java.util.Map;
 import java.net.URI;
 
@@ -23,7 +25,10 @@ public class DiscordWebSocketClient extends WebSocketClient {
     // run when the connection is established
     @Override
     public void onOpen(ServerHandshake handshakedata) {
-        MC.getToastManager().add(new NotificationToast("DPTBot", "Connected!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
+        if (MC.player != null) {
+            this.send(GSON.toJson(Map.of("type", "greet", "name", MC.player.getGameProfile().getName())));
+        }
+        MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Connected!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
     }
 
     // run when a message is received from the server
@@ -35,26 +40,34 @@ public class DiscordWebSocketClient extends WebSocketClient {
         MinecraftClient.getInstance().execute(() -> {
                 if (type.equalsIgnoreCase("delegate")) {
                     if (MOD.getDiscordRamper() && MC.player != null) {
-                        MinecraftClient.getInstance().getToastManager().add(new NotificationToast("DPTBot", "You are now the chat ramper!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
+                        MinecraftClient.getInstance().getToastManager().add(new NotificationToast("DPTBot", "You are now the chat ramper!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
                         MOD.isRamper = true;
                         this.sendModMessage("confirm", MC.player.getGameProfile().getName());
                     }
                 } else if (type.equalsIgnoreCase("broadcast")) {
                     String name = data.get("name") != null ? (String) data.get("name") : "Anonymous";
-                    MinecraftClient.getInstance().getToastManager().add(new NotificationToast(String.format("From %s", name), text, 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
+                    MinecraftClient.getInstance().getToastManager().add(new NotificationToast(String.format("From %s", name), text, Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
+                } else if (type.equalsIgnoreCase("askTabList")) {
+                    String id = (String) data.get("id");
+                    if (MC.getNetworkHandler() != null) {
+                        List<String> players = MC.getNetworkHandler().getPlayerList().stream()
+                                .map(player -> player.getProfile().getName())
+                                .toList();
+                        this.send(GSON.toJson(Map.of("type", "tabList", "id", id, "players", players)));
+                    }
                 }
         });
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        MC.getToastManager().add(new NotificationToast("DPTBot", "Disconnected!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
+        MC.getToastManager().add(new NotificationToast("DPTBot", "Disconnected!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
         DPTB2Utils.LOGGER.error("WebSocket connection closed: {} (code: {}, remote: {})", reason, code, remote);
     }
 
     @Override
     public void onError(Exception ex) {
-        MC.getToastManager().add(new NotificationToast("DPTBot", "Disconnected!", 0xFFFFFF, SoundEvents.ENTITY_BAT_TAKEOFF));
+        MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Disconnected!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
         ex.printStackTrace();
     }
 
