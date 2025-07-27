@@ -160,11 +160,11 @@ public class ChatHudMixin {
                 if
                 (
                         !content.startsWith("From ")
-                                && !content.startsWith("To ")
-                                && !content.startsWith("Party >")
-                                && !content.startsWith("Guild >")
-                                && !content.startsWith("Officer >")
-                                && !content.startsWith("You'll be ")
+                    && !content.startsWith("To ")
+                    && !content.startsWith("Party >")
+                    && !content.startsWith("Guild >")
+                    && !content.startsWith("Officer >")
+                    && !content.startsWith("You'll be ")
                 ) {
                     DPTB2Utils.websocketClient.sendModMessage("chat", message.content().getString());
                 }
