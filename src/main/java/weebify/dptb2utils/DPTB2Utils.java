@@ -32,11 +32,13 @@ import weebify.dptb2utils.utils.ButtonTimerManager;
 import weebify.dptb2utils.utils.DelayedTask;
 import weebify.dptb2utils.utils.DiscordWebSocketClient;
 
+import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 public class DPTB2Utils implements ClientModInitializer {
 	public static final String MOD_ID = "dptb2-utils";
@@ -91,6 +93,14 @@ public class DPTB2Utils implements ClientModInitializer {
 		this.scheduledTasks.add(new DelayedTask(ticks, task));
 	}
 
+	public void buttonTimerReset() {
+		ButtonTimerManager.buttonTimer = -1;
+		ButtonTimerManager.isMayhem = false;
+		ButtonTimerManager.isChaos = false;
+		ButtonTimerManager.isDisabled = false;
+		ButtonTimerManager.chaosCounter = 0;
+	}
+
 	private void initializeEvents() {
 		ClientTickEvents.START_CLIENT_TICK.register(this::onClientTick);
 		ClientTickEvents.END_CLIENT_TICK.register((var) -> {
@@ -98,7 +108,7 @@ public class DPTB2Utils implements ClientModInitializer {
 		});
 		// detecting whether the player is in DPTB2
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-			ButtonTimerManager.buttonTimer = -1; // reset button timer on join
+			this.buttonTimerReset();
 
 			ServerInfo serverEntry = client.getCurrentServerEntry();
 			if (serverEntry == null) {
@@ -142,6 +152,13 @@ public class DPTB2Utils implements ClientModInitializer {
 					this.refreshRamperStatus();
 				}
 			});
+		});
+
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			this.buttonTimerReset();
+			if (websocketClient != null && websocketClient.isOpen()) {
+				websocketClient.close();
+			}
 		});
 
 		// button timer hud

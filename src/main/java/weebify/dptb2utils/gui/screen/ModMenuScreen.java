@@ -14,6 +14,7 @@ public class ModMenuScreen extends Screen {
     private final DPTB2Utils mod;
     private EditBoxWidget host;
     private EditBoxWidget port;
+    private boolean showIPOptions = false;
 
     public ModMenuScreen(DPTB2Utils mod) {
         super(Text.literal("DPTB2 Utils"));
@@ -40,18 +41,27 @@ public class ModMenuScreen extends Screen {
             mc.setScreen(new ButtonTimerConfigScreen(this, mod));
         }).dimensions(this.width/2 + 80 - 75, 100, 150, 20).build());
 
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Allow Chat Ramp: %s", mod.getDiscordRamper() ? "ON" : "OFF")), (btn) -> {
-            btn.setMessage(Text.of(String.format("Allow Chat Ramp: %s", !mod.setDiscordRamper(!mod.getDiscordRamper()) ? "ON" : "OFF")));
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Allow DPTBot Connection: %s", mod.getDiscordRamper() ? "ON" : "OFF")), (btn) -> {
+            btn.setMessage(Text.of(String.format("Allow DPTBot Connection: %s", !mod.setDiscordRamper(!mod.getDiscordRamper()) ? "ON" : "OFF")));
             mod.refreshRamperStatus();
         }).dimensions(this.width/2 - 80 - 75, 125, 150, 20).build());
 
         this.host = new EditBoxWidget(this.textRenderer, this.width / 2 - 80 - 75, 150, 150, 20, Text.of("Websocket Host"), Text.of(DPTB2Utils.HOST));
         this.host.setText(DPTB2Utils.HOST);
+        this.host.visible = false;
         this.addDrawableChild(this.host);
 
         this.port = new EditBoxWidget(this.textRenderer, this.width / 2 + 80 - 75, 150, 150, 20, Text.of("Websocket Port"), Text.of(Integer.toString(DPTB2Utils.PORT)));
         this.port.setText(Integer.toString(DPTB2Utils.PORT));
+        this.port.visible = false;
         this.addDrawableChild(this.port);
+
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Advanced DPTBot options: %s",this.showIPOptions ? "ON" : "OFF")), (btn) -> {
+            this.showIPOptions = !this.showIPOptions;
+            btn.setMessage(Text.of(String.format("Advanced DPTBot options: %s", this.showIPOptions ? "ON" : "OFF")));
+            this.host.visible = this.showIPOptions;
+            this.port.visible = this.showIPOptions;
+        }).dimensions(this.width/2 + 80 - 75, 125, 150, 20).build());
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
             this.close();
