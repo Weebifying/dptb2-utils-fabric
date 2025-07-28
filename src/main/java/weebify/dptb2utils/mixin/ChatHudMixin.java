@@ -253,6 +253,8 @@ public class ChatHudMixin {
                  && !lower.startsWith("* run started!")
                  && !lower.startsWith("* whoah!")
                  && !lower.startsWith("* ouch!")
+                 && !lower.startsWith("*  earn points")
+                 && !lower.startsWith("* the top 3 get")
                  && !lower.startsWith("* welcome to 7/11!")
                  && !lower.startsWith("* -----")
                  && !lower.startsWith("*   take ")
