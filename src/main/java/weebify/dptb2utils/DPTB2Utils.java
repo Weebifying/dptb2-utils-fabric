@@ -58,8 +58,8 @@ public class DPTB2Utils implements ClientModInitializer {
 	private static DPTB2Utils instance;
 	public static final Gson GSON = new Gson();
 
-	public static String HOST = "79.99.40.71";
-	public static int PORT = 6426;
+//	public static String HOST = "79.99.40.71";
+//	public static int PORT = 6426;
 	public static DiscordWebSocketClient websocketClient;
 
 	public List<Text> bootsList = new ArrayList<>();
@@ -236,14 +236,16 @@ public class DPTB2Utils implements ClientModInitializer {
 //	}
 
 	public void refreshRamperStatus() {
+		String host = this.getDPTBotHost();
+		int port = this.getDPTBotPort();
 		if (this.isInDPTB2 && this.getDiscordRamper()) {
-			LOGGER.info("Attempting Websocket connection to ws://{}:{}", HOST, PORT);
-			websocketClient = new DiscordWebSocketClient(String.format("ws://%s:%s", HOST, PORT));
+			LOGGER.info("Attempting Websocket connection to ws://{}:{}", host, port);
+			websocketClient = new DiscordWebSocketClient(String.format("ws://%s:%s", host, port));
 			websocketClient.connect();
 		} else {
 			this.isRamper = false;
 			if (websocketClient != null && websocketClient.isOpen()) {
-				LOGGER.info("Closing Websocket connection to ws://{}:{}", HOST, PORT);
+				LOGGER.info("Closing Websocket connection to ws://{}:{}", host, port);
 				websocketClient.close();
 			}
 		}
@@ -293,6 +295,12 @@ public class DPTB2Utils implements ClientModInitializer {
 	public boolean getDiscordRamper() {
 		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "discordRamper", Boolean.class);
 	}
+	public String getDPTBotHost() {
+		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "dptbotHost", String.class);
+	}
+	public int getDPTBotPort() {
+		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "dptbotPort", Integer.class);
+	}
 
 	public boolean getBoolNotifs(String key) {
 		return this.getNotifs(key, Boolean.class);
@@ -312,6 +320,12 @@ public class DPTB2Utils implements ClientModInitializer {
 	}
 	public boolean setDiscordRamper(boolean value) {
 		return this.setConfig(this.config.othersMap, "discordRamper", value, Boolean.class);
+	}
+	public String setDPTBotHost(String value) {
+		return this.setConfig(this.config.othersMap, "dptbotHost", value, String.class);
+	}
+	public int setDPTBotPort(int value) {
+		return this.setConfig(this.config.othersMap, "dptbotPort", value, Integer.class);
 	}
 	public <T> T setNotifs(String key, T value, Class<T> clazz) {
 		return this.setConfig(this.config.notifsMap, key, value, clazz);

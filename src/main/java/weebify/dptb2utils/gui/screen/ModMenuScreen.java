@@ -46,13 +46,13 @@ public class ModMenuScreen extends Screen {
             mod.refreshRamperStatus();
         }).dimensions(this.width/2 - 80 - 75, 125, 150, 20).build());
 
-        this.host = new EditBoxWidget(this.textRenderer, this.width / 2 - 80 - 75, 150, 150, 20, Text.of("Websocket Host"), Text.of(DPTB2Utils.HOST));
-        this.host.setText(DPTB2Utils.HOST);
+        this.host = new EditBoxWidget(this.textRenderer, this.width / 2 - 80 - 75, 150, 150, 20, Text.of("Websocket Host"), Text.empty());
+        this.host.setText(mod.getDPTBotHost());
         this.host.visible = false;
         this.addDrawableChild(this.host);
 
-        this.port = new EditBoxWidget(this.textRenderer, this.width / 2 + 80 - 75, 150, 150, 20, Text.of("Websocket Port"), Text.of(Integer.toString(DPTB2Utils.PORT)));
-        this.port.setText(Integer.toString(DPTB2Utils.PORT));
+        this.port = new EditBoxWidget(this.textRenderer, this.width / 2 + 80 - 75, 150, 150, 20, Text.of("Websocket Port"), Text.empty());
+        this.port.setText(Integer.toString(mod.getDPTBotPort()));
         this.port.visible = false;
         this.addDrawableChild(this.port);
 
@@ -75,17 +75,21 @@ public class ModMenuScreen extends Screen {
 
     @Override
     public void close() {
-        DPTB2Utils.HOST = this.host.getText();
-        DPTB2Utils.PORT = Integer.parseInt(this.port.getText());
+        mod.setDPTBotHost(this.host.getText());
+        try {
+            mod.setDPTBotPort(Integer.parseInt(this.port.getText()));
+        } catch (NumberFormatException e) {
+            // :)
+        }
         this.mod.saveSettings();
         super.close();
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        DPTB2Utils.HOST = this.host.getText();
+        mod.setDPTBotHost(this.host.getText());
         try {
-            DPTB2Utils.PORT = Integer.parseInt(this.port.getText());
+            mod.setDPTBotPort(Integer.parseInt(this.port.getText()));
         } catch (NumberFormatException e) {
             // :)
         }
