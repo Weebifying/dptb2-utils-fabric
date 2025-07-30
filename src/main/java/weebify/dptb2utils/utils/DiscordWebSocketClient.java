@@ -67,7 +67,7 @@ public class DiscordWebSocketClient extends WebSocketClient {
 
     @Override
     public void onError(Exception ex) {
-        MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Disconnected!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
+        MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Connecting to DPTBot failed!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
         ex.printStackTrace();
     }
 

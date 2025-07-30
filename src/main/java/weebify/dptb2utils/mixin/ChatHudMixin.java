@@ -184,6 +184,7 @@ public class ChatHudMixin {
         else if (content.startsWith("*   BOUNTY INCREASE!")) counter = 2;
         else if (content.startsWith("*   WANTED DEAD OR ALIVE!")) counter = 3;
         else if (content.startsWith("* COOKIE GOAL REACHED!")) counter = 7;
+        else if (content.startsWith("* / / BUTTON Statistics \\ \\")) counter = 6;
         else if (content.startsWith("* ➜ The BUTTON was just clicked by")) counter = 2;
         else if (content.startsWith("* [!] Whoever clicks the BUTTON next will not die!")) counter = 2;
 
@@ -255,6 +256,8 @@ public class ChatHudMixin {
                  && !lower.startsWith("* run started!")
                  && !lower.startsWith("* whoah!")
                  && !lower.startsWith("* ouch!")
+                 && !lower.startsWith("*  earn points")
+                 && !lower.startsWith("* the top 3 get")
                  && !lower.startsWith("* welcome to 7/11!")
                  && !lower.startsWith("* -----")
                  && !lower.startsWith("*   take ")
