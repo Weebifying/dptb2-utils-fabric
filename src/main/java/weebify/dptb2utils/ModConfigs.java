@@ -45,7 +45,7 @@ public class ModConfigs {
         createNewConfig(othersMap, othersDefaultMap, "autoCheer", "false", Boolean.class);
         createNewConfig(othersMap, othersDefaultMap, "discordRamper", "true", Boolean.class);
         createNewConfig(othersMap, othersDefaultMap, "dptbotHost", "79.99.40.71", String.class);
-        createNewConfig(othersMap, othersDefaultMap, "dtpbotPort", "6426", String.class);
+        createNewConfig(othersMap, othersDefaultMap, "dptbotPort", "6426", Integer.class);
 
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "enabled", "false", Boolean.class);
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "textShadow", "false", Boolean.class);
