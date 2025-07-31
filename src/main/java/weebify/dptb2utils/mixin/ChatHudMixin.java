@@ -141,13 +141,14 @@ public class ChatHudMixin {
                 if
                 (
                         !content.startsWith("From ")
-                    && !content.startsWith("To ")
-                    && !content.startsWith("Party >")
-                    && !content.startsWith("Guild >")
-                    && !content.startsWith("Officer >")
-                    && !content.startsWith("You'll be ")
+                     && !content.startsWith("To ")
+                     && !content.startsWith("Party >")
+                     && !content.startsWith("Guild >")
+                     && !content.startsWith("Officer >")
+                     && !content.startsWith("You'll be ")
                 ) {
                     DPTB2Utils.websocketClient.sendModMessage("chat", message.content().getString());
+                    mod.websocketClient.sendModMessage("chat", message.getString());
                 }
             } else if (content.matches("\\* .+")) {
                 handleSystemMessage(content, message.content().getString());
@@ -191,17 +192,19 @@ public class ChatHudMixin {
         if (ButtonTimerManager.isMayhem) counter = 1;
 
         if (counter > 0) {
-            bulks.add(message);
-            if (!ButtonTimerManager.isMayhem) {
-                if (content.matches("\\* {3}Starting in [0-9,]+s!")) {
-                    if (bulks.getFirst().contains("CATACLYSMIC EVENT")) {
-                        counter = 2;
-                    } else {
-                        counter = 0;
+            if (filter(content)) {
+                bulks.add(message);
+                if (!ButtonTimerManager.isMayhem) {
+                    if (content.matches("\\* {3}Starting in [0-9,]+s!")) {
+                        if (bulks.getFirst().contains("CATACLYSMIC EVENT")) {
+                            counter = 2;
+                        } else {
+                            counter = 0;
+                        }
+                    } else if (!content.equalsIgnoreCase("* They used a Remote Activation on that press!")
+                            || !bulks.getFirst().contains("The BUTTON was just clicked")) {
+                        counter--;
                     }
-                } else if (!content.equalsIgnoreCase("* They used a Remote Activation on that press!")
-                        || !bulks.getFirst().contains("The BUTTON was just clicked")) {
-                    counter--;
                 }
             }
         }
@@ -211,7 +214,7 @@ public class ChatHudMixin {
                 String bulkMessage = String.join("\n", bulks);
                 boolean format = !(bulkMessage.startsWith("* ➜ The BUTTON was just clicked by") || bulkMessage.startsWith("* [!] Whoever clicks the BUTTON next will not die"));
                 bulks.clear();
-                DPTB2Utils.websocketClient.sendModMessage("chat", format ? String.format("* \n%s\n* ", bulkMessage) : bulkMessage);
+                DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", format ? String.format("* \n%s\n* ", bulkMessage) : bulkMessage);
                 return;
             }
 
@@ -220,67 +223,72 @@ public class ChatHudMixin {
                 return;
             }
 
-            String lower = content.toLowerCase();
-            if (
-                    !lower.contains("is currently on cooldown")
-                 && !lower.contains("is on cooldown")
-                 && !lower.contains("is currently disabled")
-                 && !lower.contains(" you ")
-                 && !lower.contains("your ending bounty")
-                 && !lower.startsWith("* [stats]")
-                 && !lower.startsWith("* [debug]")
-                 && !lower.startsWith("*  - ")
-                 && !lower.startsWith("* - ")
-                 && !lower.startsWith("* oops")
-                 && !lower.startsWith("* tip")
-                 && !lower.startsWith("* quest complete")
-                 && !lower.startsWith("* daily quests complete")
-                 && !lower.startsWith("* new quests")
-                 && !lower.startsWith("* [#")
-                 && !lower.startsWith("* discord")
-                 && !lower.startsWith("* settings")
-                 && !lower.startsWith("* lootbox")
-                 && !lower.startsWith("* cha ching")
-                 && !lower.startsWith("*   good job")
-                 && !lower.startsWith("* wahoo")
-                 && !lower.startsWith("* reward")
-                 && !lower.startsWith("* error")
-                 && !lower.startsWith("* time until next daily reward:")
-                 && !lower.startsWith("* yay")
-                 && !lower.startsWith("* sorry")
-                 && !lower.startsWith("*   afk")
-                 && !lower.startsWith("* uh oh...")
-                 && !lower.startsWith("* better hurry!")
-                 && !lower.startsWith("* final stretch!")
-                 && !lower.startsWith("* oh no!")
-                 && !lower.startsWith("* run started!")
-                 && !lower.startsWith("* whoah!")
-                 && !lower.startsWith("* ouch!")
-                 && !lower.startsWith("*  earn points")
-                 && !lower.startsWith("* the top 3 get")
-                 && !lower.startsWith("* welcome to 7/11!")
-                 && !lower.startsWith("* -----")
-                 && !lower.startsWith("*   take ")
-                 && !lower.startsWith("* log back on in")
-                 && !lower.startsWith("* the button is currently on cooldown")
-                 && !lower.startsWith("*   with a time of")
-                 && !lower.startsWith("* completion streak!")
-                 && !lower.startsWith("* ➜ get another completion in the next")
-                 && !lower.startsWith("* --- legendary games")
-                 && !lower.startsWith("* join our discord")
-                 && !lower.startsWith("* https://")
-                 && !lower.startsWith("* apply for staff")
-                 && !lower.matches("\\* [0-9,]+⛂ gold & [0-9,]+xp from that completion streak!")
-                 && !lower.matches("\\* successfully converted [0-9,]+⛂ gold into stat form!")
-                 && !lower.matches("\\* total: [0-9,]+⛂ gold")
-                 && !Pattern.compile("\\* \\+[0-9,]+⛂").matcher(lower).find()
-            ) {
-
+            if (filter(content)) {
                 if (isTravel) isTravel = false;
                 else {
-                    DPTB2Utils.websocketClient.sendModMessage("chat", message);
+                    DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", message);
                 }
             }
         }
     }
+
+    @Unique
+    private static boolean filter(String content) {
+        String lower = content.toLowerCase();
+
+        return !lower.contains("is currently on cooldown")
+            && !lower.contains("is on cooldown")
+            && !lower.contains("is currently disabled")
+            && !lower.contains(" you ")
+            && !lower.contains("your ending bounty")
+            && !lower.contains("total from bounty")
+            && !lower.startsWith("*  - ")
+            && !lower.startsWith("* - ")
+            && !lower.startsWith("* [stats]")
+            && !lower.startsWith("* [debug]")
+            && !lower.startsWith("* oops")
+            && !lower.startsWith("* tip")
+            && !lower.startsWith("* quest complete")
+            && !lower.startsWith("* daily quests complete")
+            && !lower.startsWith("* new quests")
+            && !lower.startsWith("* [#")
+            && !lower.startsWith("* discord")
+            && !lower.startsWith("* settings")
+            && !lower.startsWith("* lootbox")
+            && !lower.startsWith("* cha ching")
+            && !lower.startsWith("*   good job")
+            && !lower.startsWith("* wahoo")
+            && !lower.startsWith("* reward")
+            && !lower.startsWith("* error")
+            && !lower.startsWith("* time until next daily reward:")
+            && !lower.startsWith("* yay")
+            && !lower.startsWith("* sorry")
+            && !lower.startsWith("*   afk")
+            && !lower.startsWith("* uh oh...")
+            && !lower.startsWith("* better hurry!")
+            && !lower.startsWith("* final stretch!")
+            && !lower.startsWith("* oh no!")
+            && !lower.startsWith("* run started!")
+            && !lower.startsWith("* whoah!")
+            && !lower.startsWith("* ouch!")
+            && !lower.startsWith("*  earn points")
+            && !lower.startsWith("* the top 3 get")
+            && !lower.startsWith("* welcome to 7/11!")
+            && !lower.startsWith("* -----")
+            && !lower.startsWith("*   take ")
+            && !lower.startsWith("* log back on in")
+            && !lower.startsWith("* the button is currently on cooldown")
+            && !lower.startsWith("*   with a time of")
+            && !lower.startsWith("* completion streak!")
+            && !lower.startsWith("* ➜ get another completion in the next")
+            && !lower.startsWith("* --- legendary games")
+            && !lower.startsWith("* join our discord")
+            && !lower.startsWith("* https://")
+            && !lower.startsWith("* apply for staff")
+            && !lower.matches("\\* [0-9,]+⛂ gold & [0-9,]+xp from that completion streak!")
+            && !lower.matches("\\* successfully converted [0-9,]+⛂ gold into stat form!")
+            && !lower.matches("\\* total: [0-9,]+⛂ gold")
+            && !Pattern.compile("\\* \\+[0-9,]+⛂").matcher(lower).find();
+    }
 }
+

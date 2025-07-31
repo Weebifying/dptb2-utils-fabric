@@ -16,12 +16,23 @@ An utility mod for the Hypixel Housing game **Don't Press The Button 2**
     - Button Immunity: Next person to press the button will not die.
 - **Boots Tracker**: Tracks the boots players have acquired in your current session.
 - **Button Timer**: HUD timer that shows how long ago the button was last pressed.
+- **DPTBot Integration**: Integrates with the DPTBot Discord bot for the VI+ discord's Chat Ramp:
+    - Enable the "Allow DPTBot Connection" option in the mod menu to connect to the bot when you join the DPTB2 housing.
 - More coming soon...
+
+## Advanced DTPBot options
+- When enabled, 2 textboxes will appear in the mod menu screen.
+- They are the **DPTBot Server Host** and **DPTBot Server Port** that the mod connects to.
+- Do not change them unless told otherwise.
+
+![img.png](res/img.png)
 
 # Usage:
 Run `/dptb2` in the chat to open the mod menu.
 
-![preview](preview.png)
+![preview.png](res/preview.png)
+
+![btn_timer_preview.png](res/btn_timer_preview.png)
 
 # Installation
 ### Pre-built package
