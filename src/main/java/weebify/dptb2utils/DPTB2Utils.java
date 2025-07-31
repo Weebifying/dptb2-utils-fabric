@@ -3,7 +3,6 @@ package weebify.dptb2utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.api.ClientModInitializer;
 
@@ -15,11 +14,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.toast.ToastManager;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.scoreboard.*;
-import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
@@ -32,7 +28,6 @@ import weebify.dptb2utils.utils.ButtonTimerManager;
 import weebify.dptb2utils.utils.DelayedTask;
 import weebify.dptb2utils.utils.DiscordWebSocketClient;
 
-import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -51,6 +46,7 @@ public class DPTB2Utils implements ClientModInitializer {
 	private boolean displayScreen = false;
 	public boolean isInDPTB2 = false;
 	public boolean isRamper = false;
+	public boolean tryingToConnect = false;
 
 	public List<DelayedTask> scheduledTasks = new ArrayList<>();
 
@@ -60,7 +56,7 @@ public class DPTB2Utils implements ClientModInitializer {
 
 //	public static String HOST = "79.99.40.71";
 //	public static int PORT = 6426;
-	public static DiscordWebSocketClient websocketClient;
+	public DiscordWebSocketClient websocketClient;
 
 	public List<Text> bootsList = new ArrayList<>();
 
