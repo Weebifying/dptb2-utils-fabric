@@ -147,8 +147,7 @@ public class ChatHudMixin {
                      && !content.startsWith("Officer >")
                      && !content.startsWith("You'll be ")
                 ) {
-                    DPTB2Utils.websocketClient.sendModMessage("chat", message.content().getString());
-                    mod.websocketClient.sendModMessage("chat", message.getString());
+                    mod.websocketClient.sendModMessage("chat", message.content().getString());
                 }
             } else if (content.matches("\\* .+")) {
                 handleSystemMessage(content, message.content().getString());
