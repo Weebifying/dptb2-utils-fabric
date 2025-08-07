@@ -2,13 +2,18 @@ package weebify.dptb2utils.utils;
 
 import com.google.gson.Gson;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
+import net.minecraft.util.Formatting;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import weebify.dptb2utils.DPTB2Utils;
 import weebify.dptb2utils.gui.widget.NotificationToast;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.net.URI;
@@ -27,7 +32,7 @@ public class DiscordWebSocketClient extends WebSocketClient {
     public void onOpen(ServerHandshake handshakedata) {
         mod.tryingToConnect = false;
         if (MC.player != null) {
-            this.send(GSON.toJson(Map.of("type", "greet", "name", MC.player.getGameProfile().getName())));
+            this.sendModMessage("greet", Map.of("name", MC.player.getGameProfile().getName(), "version", DPTB2Utils.VERSION));
         }
         MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Connected!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
     }
@@ -41,20 +46,42 @@ public class DiscordWebSocketClient extends WebSocketClient {
         MinecraftClient.getInstance().execute(() -> {
                 if (type.equalsIgnoreCase("delegate")) {
                     if (mod.getDiscordRamper() && MC.player != null) {
-                        MinecraftClient.getInstance().getToastManager().add(new NotificationToast("DPTBot", "You are now the chat ramper!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
+                        MC.getToastManager().add(new NotificationToast("DPTBot", "You are now the chat ramper!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
                         mod.isRamper = true;
-                        this.sendModMessage("confirm", MC.player.getGameProfile().getName());
+                        this.sendModMessage("confirm", Map.of("text", MC.player.getGameProfile().getName()));
                     }
                 } else if (type.equalsIgnoreCase("broadcast")) {
-                    String name = data.get("name") != null ? (String) data.get("name") : "Anonymous";
-                    MinecraftClient.getInstance().getToastManager().add(new NotificationToast(String.format("From %s", name), text, Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
+                    String source = data.get("source") != null ? (String) data.get("source") : "???";
+                    String name = data.get("name") != null ? (String) data.get("name") : "Unknown";
+
+                    StringBuilder sb = new StringBuilder("§8[");
+                    if (source.equalsIgnoreCase("DISC")) {
+                        sb.append("§9DISC§r").append("§8]§r ").append(String.format("§9%s§r", name));
+                    } else if (source.equalsIgnoreCase("WPTB")) {
+                        sb.append("§6WPTB§r").append("§8]§r ").append(String.format("§6%s§r", name));
+                    } else {
+                        sb.append("§4???§r").append("§8]§r ").append(name);
+                    }
+                    sb.append(": ").append(text);
+
+                    if (mod.getBroadcastToast()) {
+                        int color = source.equalsIgnoreCase("DISC") ? 0xFF5555FF : (source.equalsIgnoreCase("WPTB") ? 0xFFFFAA00 : 0xFFFF5555);
+                        MC.getToastManager().add(new NotificationToast(String.format("[%s] %s", source, name), text, color, SoundEvents.BLOCK_NOTE_BLOCK_PLING.value()));
+                    }
+
+                    if (MC.player != null && mod.getBroadcastChat()) {
+                        MC.player.sendMessage(Text.literal(sb.toString()), false);
+                        if (!mod.getBroadcastToast()) {
+                            MC.getSoundManager().play(PositionedSoundInstance.master(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 1, 1));
+                        }
+                    }
                 } else if (type.equalsIgnoreCase("askTabList")) {
                     String id = (String) data.get("id");
                     if (MC.getNetworkHandler() != null) {
                         List<String> players = MC.getNetworkHandler().getPlayerList().stream()
                                 .map(player -> player.getProfile().getName())
                                 .toList();
-                        this.send(GSON.toJson(Map.of("type", "tabList", "id", id, "players", players)));
+                        this.sendModMessage("tabList", Map.of("id", id, "players", players));
                     }
                 }
         });
@@ -78,16 +105,26 @@ public class DiscordWebSocketClient extends WebSocketClient {
         this.retryConnection();
     }
 
-    public void sendModMessage(String type, String message) {
+//    public void sendModMessage(String type, String message) {
+//        if (this.isOpen() && MC.player != null) {
+//            this.send(GSON.toJson(Map.of("type", type, "text", message)));
+//        }
+//    }
+
+    public void sendModMessage(String type, Map<String, Object> data) {
+        data = new HashMap<>(data);
+        data.put("type", type);
+        data.put("version", DPTB2Utils.VERSION);
+//        DPTB2Utils.LOGGER.info("Sending message to DPTBot: {}", data);
         if (this.isOpen() && MC.player != null) {
-            this.send(GSON.toJson(Map.of("type", type, "text", message)));
+            this.send(GSON.toJson(data));
         }
     }
 
     public void retryConnection() {
         mod.tryingToConnect = true;
         mod.scheduleTask( 1200, () -> {
-            if ((mod.websocketClient == null || mod.websocketClient.isClosed()) & mod.getDiscordRamper() && mod.tryingToConnect) {
+            if ((mod.websocketClient == null || mod.websocketClient.isClosed()) & mod.getDiscordRamper() && mod.tryingToConnect && mod.isInDPTB2) {
                 String host = mod.getDPTBotHost();
                 int port = mod.getDPTBotPort();
 
