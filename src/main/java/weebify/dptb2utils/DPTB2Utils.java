@@ -3,6 +3,7 @@ package weebify.dptb2utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.api.ClientModInitializer;
 
@@ -19,6 +20,7 @@ import net.minecraft.scoreboard.*;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
+import net.minecraft.util.Formatting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import weebify.dptb2utils.gui.screen.ButtonTimerConfigScreen;
@@ -35,8 +37,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
-public class DPTB2Utils implements ClientModInitializer {
+public class DPTB2Utils implements ClientModInitializer {	
 	public static final String MOD_ID = "dptb2-utils";
+	public static final String VERSION = "1.1.1";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	public ModConfigs config;
@@ -188,7 +191,7 @@ public class DPTB2Utils implements ClientModInitializer {
 
 	private void initializeCommands() {
 		ClientCommandRegistrationCallback.EVENT.register(this::commandModMenu);
-//		ClientCommandRegistrationCallback.EVENT.register(this::commandBroadcast);
+		ClientCommandRegistrationCallback.EVENT.register(this::commandBroadcast);
 	}
 
 	private void onClientTick(MinecraftClient var) {
@@ -219,17 +222,32 @@ public class DPTB2Utils implements ClientModInitializer {
 		);
 	}
 
-//	private void commandBroadcast(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
-//		LiteralCommandNode<FabricClientCommandSource> c = dispatcher.register(
-//				ClientCommandManager.literal("broadcast")
-//						.then(ClientCommandManager.argument("message", StringArgumentType.greedyString()))
-//						.executes(context -> {
-//							String msg = StringArgumentType.getString(context, "message");
-//								websocketClient.sendModMessage(String.format("%s broadcast", mc.player != null ? mc.player.getGameProfile().getName() : "Unknown"), msg);
-//							return 1;
-//						})
-//		);
-//	}
+	private void commandBroadcast(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
+		LiteralCommandNode<FabricClientCommandSource> c = dispatcher.register(
+				ClientCommandManager.literal("broadcast")
+						.then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
+						.executes(context -> {
+							if (mc.player != null) {
+								if (websocketClient != null && websocketClient.isOpen()) {
+									String msg = StringArgumentType.getString(context, "message");
+									try {
+										websocketClient.sendModMessage("playerBroadcast", Map.of("text", msg, "name", mc.player.getGameProfile().getName()));
+										if (!this.getBroadcastChat()) {
+											mc.player.sendMessage(Text.literal("Broadcast message: " + msg).formatted(Formatting.GREEN), false);
+										}
+									} catch (Exception e) {
+										LOGGER.error("Failed to send broadcast message!", e);
+										mc.player.sendMessage(Text.literal("Failed to send broadcast message!").formatted(Formatting.RED), false);
+									}
+								} else {
+									mc.player.sendMessage(Text.literal("Not connected to DPTBot!").formatted(Formatting.RED), false);
+								}
+							}
+							return 1;
+						})
+					)
+		);
+	}
 
 	public void refreshRamperStatus() {
 		String host = this.getDPTBotHost();
@@ -285,6 +303,9 @@ public class DPTB2Utils implements ClientModInitializer {
 	public <T> T getButtonTimerConfigs(String key, Class<T> clazz) {
 		return this.getConfig(this.config.buttonTimerMap, ModConfigs.buttonTimerDefaultMap, key, clazz);
 	}
+	public <T> T getItemCooldownConfigs(String key, Class<T> clazz) {
+		return this.getConfig(this.config.itemCooldownMap, ModConfigs.itemCooldownDefaultMap, key, clazz);
+	}
 	public boolean getAutoCheer() {
 		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "autoCheer", Boolean.class);
 	}
@@ -296,6 +317,12 @@ public class DPTB2Utils implements ClientModInitializer {
 	}
 	public int getDPTBotPort() {
 		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "dptbotPort", Integer.class);
+	}
+	public boolean getBroadcastToast() {
+		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "broadcastToast", Boolean.class);
+	}
+	public boolean getBroadcastChat() {
+		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "broadcastChat", Boolean.class);
 	}
 
 	public boolean getBoolNotifs(String key) {
@@ -311,6 +338,10 @@ public class DPTB2Utils implements ClientModInitializer {
 		return this.getButtonTimerConfigs("renderBackground", Boolean.class);
 	}
 
+	public boolean getItemCooldownEnabled() {
+		return this.getItemCooldownConfigs("enabled", Boolean.class);
+	}
+
 	public boolean setAutoCheer(boolean value) {
 		return this.setConfig(this.config.othersMap, "autoCheer", value, Boolean.class);
 	}
@@ -323,11 +354,21 @@ public class DPTB2Utils implements ClientModInitializer {
 	public int setDPTBotPort(int value) {
 		return this.setConfig(this.config.othersMap, "dptbotPort", value, Integer.class);
 	}
+	public boolean setBroadcastToast(boolean value) {
+		return this.setConfig(this.config.othersMap, "broadcastToast", value, Boolean.class);
+	}
+	public boolean setBroadcastChat(boolean value) {
+		return this.setConfig(this.config.othersMap, "broadcastChat", value, Boolean.class);
+	}
+
 	public <T> T setNotifs(String key, T value, Class<T> clazz) {
 		return this.setConfig(this.config.notifsMap, key, value, clazz);
 	}
 	public <T> T setButtonTimerConfigs(String key, T value, Class<T> clazz) {
 		return this.setConfig(this.config.buttonTimerMap, key, value, clazz);
+	}
+	public <T> T setItemCooldownConfigs(String key, T value, Class<T> clazz) {
+		return this.setConfig(this.config.itemCooldownMap, key, value, clazz);
 	}
 	public boolean setBoolNotifs(String key, boolean value) {
 		return this.setNotifs(key, value, Boolean.class);
@@ -340,5 +381,8 @@ public class DPTB2Utils implements ClientModInitializer {
 	}
 	public boolean setButtonTimerRenderBG(boolean value) {
 		return this.setButtonTimerConfigs("renderBackground", value, Boolean.class);
+	}
+	public boolean setItemCooldownEnabled(boolean value) {
+		return this.setItemCooldownConfigs("enabled", value, Boolean.class);
 	}
 }
