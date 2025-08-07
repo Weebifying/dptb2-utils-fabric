@@ -12,9 +12,6 @@ import weebify.dptb2utils.DPTB2Utils;
 
 public class ModMenuScreen extends Screen {
     private final DPTB2Utils mod;
-    private EditBoxWidget host;
-    private EditBoxWidget port;
-    private boolean showIPOptions = false;
 
     public ModMenuScreen(DPTB2Utils mod) {
         super(Text.literal("DPTB2 Utils"));
@@ -41,27 +38,10 @@ public class ModMenuScreen extends Screen {
             mc.setScreen(new ButtonTimerConfigScreen(this, mod));
         }).dimensions(this.width/2 + 80 - 75, 100, 150, 20).build());
 
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Allow DPTBot Connection: %s", mod.getDiscordRamper() ? "ON" : "OFF")), (btn) -> {
-            btn.setMessage(Text.of(String.format("Allow DPTBot Connection: %s", !mod.setDiscordRamper(!mod.getDiscordRamper()) ? "ON" : "OFF")));
-            mod.refreshRamperStatus();
+        this.addDrawableChild(ButtonWidget.builder(Text.of("DPTBot Config"), (btn) -> {
+            mc.setScreen(new DPTBotConfigScreen(this, mod));
         }).dimensions(this.width/2 - 80 - 75, 125, 150, 20).build());
 
-        this.host = EditBoxWidget.builder().x(this.width / 2 - 80 - 75).y(150).placeholder(Text.of("Websocket Host")).build(this.textRenderer, 150, 20, Text.of(mod.getDPTBotHost()));
-        this.host.setText(mod.getDPTBotHost());
-        this.host.visible = false;
-        this.addDrawableChild(this.host);
-
-        this.port = EditBoxWidget.builder().x(this.width / 2 + 80 - 75).y(150).placeholder(Text.of("Websocket Host")).build(this.textRenderer, 150, 20, Text.of(Integer.toString(mod.getDPTBotPort())));
-        this.port.setText(Integer.toString(mod.getDPTBotPort()));
-        this.port.visible = false;
-        this.addDrawableChild(this.port);
-
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Advanced DPTBot options: %s",this.showIPOptions ? "ON" : "OFF")), (btn) -> {
-            this.showIPOptions = !this.showIPOptions;
-            btn.setMessage(Text.of(String.format("Advanced DPTBot options: %s", this.showIPOptions ? "ON" : "OFF")));
-            this.host.visible = this.showIPOptions;
-            this.port.visible = this.showIPOptions;
-        }).dimensions(this.width/2 + 80 - 75, 125, 150, 20).build());
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
             this.close();
@@ -75,25 +55,8 @@ public class ModMenuScreen extends Screen {
 
     @Override
     public void close() {
-        mod.setDPTBotHost(this.host.getText());
-        try {
-            mod.setDPTBotPort(Integer.parseInt(this.port.getText()));
-        } catch (NumberFormatException e) {
-            // :)
-        }
         this.mod.saveSettings();
         super.close();
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        mod.setDPTBotHost(this.host.getText());
-        try {
-            mod.setDPTBotPort(Integer.parseInt(this.port.getText()));
-        } catch (NumberFormatException e) {
-            // :)
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

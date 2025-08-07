@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -138,8 +139,7 @@ public class ChatHudMixin {
         if (mod.isRamper && !content.isBlank()) {
             // inclusion
             if (content.matches("[^:]+:.+") && !content.startsWith("* ")) {
-                if
-                (
+                if (
                         !content.startsWith("From ")
                      && !content.startsWith("To ")
                      && !content.startsWith("Party >")
@@ -147,7 +147,7 @@ public class ChatHudMixin {
                      && !content.startsWith("Officer >")
                      && !content.startsWith("You'll be ")
                 ) {
-                    mod.websocketClient.sendModMessage("chat", message.content().getString());
+                    mod.websocketClient.sendModMessage("chat", Map.of("text", message.content().getString()));
                 }
             } else if (content.matches("\\* .+")) {
                 handleSystemMessage(content, message.content().getString());
@@ -163,7 +163,11 @@ public class ChatHudMixin {
         else if (content.startsWith("*   MINOR EVENT! ➜ HEAT WAVE")) counter = 5;
         else if (content.startsWith("*   MINOR EVENT! ➜ CHAOS BUTTON")) counter = 5;
         else if (content.startsWith("*   MINOR EVENT! ➜ DON'T PRESS THE BUTTON (literally)")) counter = 6;
-        else if (content.startsWith("*   GG! The BUTTON was not pressed for 45s!")) counter = 3;
+        else if (content.startsWith("*   The Don't Press the Button (literally) event has ended!")) counter = 6;
+        else if (content.startsWith("*  MINOR EVENT! ➜ PRESS THE BUTTON")) counter = 3;
+        else if (content.startsWith("*  The Press the Button event has ended!")) counter = 1;
+        else if (content.startsWith("*  GG! The BUTTON was pressed by ")) counter = 2;
+        else if (content.startsWith("*   GG! The BUTTON was not pressed for ")) counter = 3;
         else if (content.startsWith("*   MEGA EVENT! ➜ RAFFLE")) counter = 4;
         else if (content.startsWith("*   The BANK is now off cooldown!")) counter = 1;
         else if (content.startsWith("*   THE BANK HAS BEEN BROKEN INTO!")) counter = 2;
@@ -191,21 +195,20 @@ public class ChatHudMixin {
         if (ButtonTimerManager.isMayhem) counter = 1;
 
         if (counter > 0) {
-            if (filter(content)) {
-                bulks.add(message);
-                if (!ButtonTimerManager.isMayhem) {
-                    if (content.matches("\\* {3}Starting in [0-9,]+s!")) {
-                        if (bulks.getFirst().contains("CATACLYSMIC EVENT")) {
-                            counter = 2;
-                        } else {
-                            counter = 0;
-                        }
-                    } else if (!content.equalsIgnoreCase("* They used a Remote Activation on that press!")
-                            || !bulks.getFirst().contains("The BUTTON was just clicked")) {
-                        counter--;
+            if (filter(content)) bulks.add(message);
+            if (!ButtonTimerManager.isMayhem) {
+                if (content.matches("\\* {3}Starting in [0-9,]+s!")) {
+                    if (bulks.getFirst().contains("CATACLYSMIC EVENT")) {
+                        counter = 2;
+                    } else {
+                        counter = 0;
                     }
+                } else if (!content.equalsIgnoreCase("* They used a Remote Activation on that press!")
+                        || !bulks.getFirst().contains("The BUTTON was just clicked")) {
+                    counter--;
                 }
             }
+
         }
 
         if (counter == 0) {
@@ -213,7 +216,7 @@ public class ChatHudMixin {
                 String bulkMessage = String.join("\n", bulks);
                 boolean format = !(bulkMessage.startsWith("* ➜ The BUTTON was just clicked by") || bulkMessage.startsWith("* [!] Whoever clicks the BUTTON next will not die"));
                 bulks.clear();
-                DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", format ? String.format("* \n%s\n* ", bulkMessage) : bulkMessage);
+                DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", Map.of("text", format ? String.format("* \n%s\n* ", bulkMessage) : bulkMessage));
                 return;
             }
 
@@ -225,7 +228,7 @@ public class ChatHudMixin {
             if (filter(content)) {
                 if (isTravel) isTravel = false;
                 else {
-                    DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", message);
+                    DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", Map.of("text", message));
                 }
             }
         }
@@ -241,6 +244,7 @@ public class ChatHudMixin {
             && !lower.contains(" you ")
             && !lower.contains("your ending bounty")
             && !lower.contains("total from bounty")
+            && !lower.contains("s remaining")
             && !lower.startsWith("*  - ")
             && !lower.startsWith("* - ")
             && !lower.startsWith("* [stats]")
@@ -259,6 +263,7 @@ public class ChatHudMixin {
             && !lower.startsWith("* wahoo")
             && !lower.startsWith("* reward")
             && !lower.startsWith("* error")
+            && !lower.startsWith("* hey")
             && !lower.startsWith("* time until next daily reward:")
             && !lower.startsWith("* yay")
             && !lower.startsWith("* sorry")
@@ -278,6 +283,7 @@ public class ChatHudMixin {
             && !lower.startsWith("* log back on in")
             && !lower.startsWith("* the button is currently on cooldown")
             && !lower.startsWith("*   with a time of")
+            && !lower.startsWith("*   joined the bank heist!")
             && !lower.startsWith("* completion streak!")
             && !lower.startsWith("* ➜ get another completion in the next")
             && !lower.startsWith("* --- legendary games")

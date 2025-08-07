@@ -13,10 +13,12 @@ public class ModConfigs {
     public Map<String, JsonElement> notifsMap = new LinkedHashMap<>();
     public Map<String, JsonElement> othersMap = new LinkedHashMap<>();
     public Map<String, JsonElement> buttonTimerMap = new LinkedHashMap<>();
+    public Map<String, JsonElement> itemCooldownMap = new LinkedHashMap<>();
 
     public static final Map<String, JsonElement> notifsDefaultMap = new LinkedHashMap<>();
     public static final Map<String, JsonElement> othersDefaultMap = new LinkedHashMap<>();
     public static final Map<String, JsonElement> buttonTimerDefaultMap = new LinkedHashMap<>();
+    public static final Map<String, JsonElement> itemCooldownDefaultMap = new LinkedHashMap<>();
 
     static <T> void createNewConfig(Map<String, JsonElement> map, Map<String, JsonElement> defaultMap, String key, String defaultValue, Class<T> clazz) {
         Type type = TypeToken.get(clazz).getType();
@@ -46,11 +48,17 @@ public class ModConfigs {
         createNewConfig(othersMap, othersDefaultMap, "discordRamper", "false", Boolean.class);
         createNewConfig(othersMap, othersDefaultMap, "dptbotHost", "87.106.101.66", String.class);
         createNewConfig(othersMap, othersDefaultMap, "dptbotPort", "6212", Integer.class);
+        createNewConfig(othersMap, othersDefaultMap, "broadcastToast", "true", Boolean.class);
+        createNewConfig(othersMap, othersDefaultMap, "broadcastChat", "true", Boolean.class);
 
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "enabled", "false", Boolean.class);
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "textShadow", "false", Boolean.class);
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "renderBackground", "true", Boolean.class);
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "posX", "0.5", Float.class);
         createNewConfig(buttonTimerMap, buttonTimerDefaultMap, "posY", "0.5", Float.class);
+
+        createNewConfig(itemCooldownMap, itemCooldownDefaultMap, "enabled", "false", Boolean.class);
+        createNewConfig(itemCooldownMap, itemCooldownDefaultMap, "posX", "0", Float.class);
+        createNewConfig(itemCooldownMap, itemCooldownDefaultMap, "posY", "0.5", Float.class);
     }
 }
