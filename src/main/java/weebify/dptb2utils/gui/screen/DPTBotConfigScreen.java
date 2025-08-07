@@ -39,12 +39,12 @@ public class DPTBotConfigScreen extends Screen {
             btn.setMessage(Text.of(String.format("Broadcast Chat: %s", !mod.setBroadcastChat(!mod.getBroadcastChat()) ? "ON" : "OFF")));
         }).dimensions(this.width/2 + 80 - 75, 100, 150, 20).build());
 
-        this.host = new EditBoxWidget(this.textRenderer, this.width / 2 - 80 - 75, 125, 150, 20, Text.of("Websocket Host"), Text.empty());
+        this.host = EditBoxWidget.builder().x(this.width / 2 - 80 - 75).y(125).placeholder(Text.of("Websocket Host")).build(this.textRenderer, 150, 20, Text.of(mod.getDPTBotHost()));
         this.host.setText(mod.getDPTBotHost());
         this.host.visible = false;
         this.addDrawableChild(this.host);
 
-        this.port = new EditBoxWidget(this.textRenderer, this.width / 2 + 80 - 75, 125, 150, 20, Text.of("Websocket Port"), Text.empty());
+        this.port = EditBoxWidget.builder().x(this.width / 2 + 80 - 75).y(125).placeholder(Text.of("Websocket Host")).build(this.textRenderer, 150, 20, Text.of(Integer.toString(mod.getDPTBotPort())));
         this.port.setText(Integer.toString(mod.getDPTBotPort()));
         this.port.visible = false;
         this.addDrawableChild(this.port);
