@@ -205,7 +205,6 @@ public class ChatHudMixin {
                     counter--;
                 }
             }
-
         }
 
         if (counter == 0) {

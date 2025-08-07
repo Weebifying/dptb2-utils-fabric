@@ -46,9 +46,14 @@ public class DiscordWebSocketClient extends WebSocketClient {
         MinecraftClient.getInstance().execute(() -> {
                 if (type.equalsIgnoreCase("delegate")) {
                     if (mod.getDiscordRamper() && MC.player != null) {
-                        MC.getToastManager().add(new NotificationToast("DPTBot", "You are now the chat ramper!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
+                        MC.getToastManager().add(new NotificationToast("DPTBot", text, Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
                         mod.isRamper = true;
                         this.sendModMessage("confirm", Map.of("text", MC.player.getGameProfile().getName()));
+                    }
+                } else if (type.equalsIgnoreCase("revoke")) {
+                    if (mod.getDiscordRamper()) {
+                        MC.getToastManager().add(new NotificationToast("DPTBot", text, Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
+                        mod.isRamper = false;
                     }
                 } else if (type.equalsIgnoreCase("broadcast")) {
                     String source = data.get("source") != null ? (String) data.get("source") : "???";
