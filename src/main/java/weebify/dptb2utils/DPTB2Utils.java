@@ -180,14 +180,12 @@ public class DPTB2Utils {
 
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Post event) {
-        if (this.isInDPTB2 && this.getButtonTimerEnabled() && !(mc.currentScreen instanceof GuiButtonTimerConfig)) {
+        if (event.type == RenderGameOverlayEvent.ElementType.ALL && this.isInDPTB2 && this.getButtonTimerEnabled() && !(mc.currentScreen instanceof GuiButtonTimerConfig)) {
             ScaledResolution scaledRes = new ScaledResolution(mc);
             int width = scaledRes.getScaledWidth();
             int height = scaledRes.getScaledHeight();
             String text = ButtonTimerManager.tickToTime(ButtonTimerManager.buttonTimer);
             int textWidth = mc.fontRendererObj.getStringWidth(text);
-            GlStateManager.enableBlend();
-            GlStateManager.enableAlpha();
             if (this.getButtonTimerRenderBG()) {
                 Gui.drawRect(
                         (int) (width*this.getButtonTimerConfigs("posX", Float.class)),
@@ -205,15 +203,9 @@ public class DPTB2Utils {
                     0xFFFFFFFF,
                     this.getButtonTimerTextShadow()
             );
-            GlStateManager.disableBlend();
-            GlStateManager.disableAlpha();
+
+            NotificationManager.getInstance().render(event.resolution);
         }
-
-
-        // also gpt
-        // use ElementType.ALL to draw after everything (adjust if you want different timing)
-        if (event.type != RenderGameOverlayEvent.ElementType.ALL) return;
-        NotificationManager.getInstance().render(event.resolution);
     }
 
     private void initializeCommands() {

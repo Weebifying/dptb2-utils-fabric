@@ -60,6 +60,5 @@ public class GuiBootsList extends GuiScreen {
         if (wheel != 0) {
             this.listWidget.mouseScrolled(0, 0, 0, wheel > 0 ? -1 : 1);
         }
-
     }
 }

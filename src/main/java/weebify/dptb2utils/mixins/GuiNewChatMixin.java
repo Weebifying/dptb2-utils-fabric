@@ -271,6 +271,7 @@ public class GuiNewChatMixin {
                 && !lower.startsWith("* join our discord")
                 && !lower.startsWith("* https://")
                 && !lower.startsWith("* apply for staff")
+                && !lower.startsWith("* [!] that was a slow run")
                 && !lower.matches("\\* [0-9,]+⛂ gold & [0-9,]+xp from that completion streak!")
                 && !lower.matches("\\* successfully converted [0-9,]+⛂ gold into stat form!")
                 && !lower.matches("\\* total: [0-9,]+⛂ gold")
