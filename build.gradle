@@ -1,7 +1,8 @@
 buildscript {
     repositories {
         maven { url "https://maven.minecraftforge.net" }
-        maven { url 'https://repo.spongepowered.org/maven'}
+        maven { url 'https://repo.spongepowered.org/maven' }
+        maven { url 'https://maven.glass-launcher.net/babric' }
     }
     dependencies {
         classpath "net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT"
