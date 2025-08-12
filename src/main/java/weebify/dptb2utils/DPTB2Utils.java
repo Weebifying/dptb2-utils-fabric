@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -185,6 +186,8 @@ public class DPTB2Utils {
             int height = scaledRes.getScaledHeight();
             String text = ButtonTimerManager.tickToTime(ButtonTimerManager.buttonTimer);
             int textWidth = mc.fontRendererObj.getStringWidth(text);
+            GlStateManager.enableBlend();
+            GlStateManager.enableAlpha();
             if (this.getButtonTimerRenderBG()) {
                 Gui.drawRect(
                         (int) (width*this.getButtonTimerConfigs("posX", Float.class)),
@@ -202,6 +205,8 @@ public class DPTB2Utils {
                     0xFFFFFFFF,
                     this.getButtonTimerTextShadow()
             );
+            GlStateManager.disableBlend();
+            GlStateManager.disableAlpha();
         }
 
 
