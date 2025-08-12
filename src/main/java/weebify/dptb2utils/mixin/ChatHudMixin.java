@@ -245,6 +245,7 @@ public class ChatHudMixin {
             && !lower.startsWith("* - ")
             && !lower.startsWith("* [stats]")
             && !lower.startsWith("* [debug]")
+            && !lower.startsWith("* [npc]")
             && !lower.startsWith("* oops")
             && !lower.startsWith("* tip")
             && !lower.startsWith("* quest complete")

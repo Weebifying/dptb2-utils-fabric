@@ -26,8 +26,6 @@ public class ButtonTimerConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-
         this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Enabled: %s", mod.getButtonTimerEnabled() ? "ON" : "OFF")), (btn) -> {
             btn.setMessage(Text.of(String.format("Enabled: %s", !mod.setButtonTimerEnabled(!mod.getButtonTimerEnabled()) ? "ON" : "OFF")));
         }).dimensions(this.width/2 - 80 - 75, 75, 150, 20).build());

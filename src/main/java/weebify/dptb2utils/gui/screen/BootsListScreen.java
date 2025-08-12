@@ -13,7 +13,7 @@ public class BootsListScreen extends Screen {
     public Screen parent;
     public ScrollableBootsList listWidget;
 
-    protected BootsListScreen(Screen parent, DPTB2Utils mod) {
+    public BootsListScreen(Screen parent, DPTB2Utils mod) {
         super(Text.of("Boots List"));
         this.parent = parent;
         this.mod = mod;

@@ -24,15 +24,20 @@ public class DPTBotConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Allow DPTBot Connection: %s", mod.getDiscordRamper() ? "ON" : "OFF")), (btn) -> {
-            btn.setMessage(Text.of(String.format("Allow DPTBot Connection: %s", !mod.setDiscordRamper(!mod.getDiscordRamper()) ? "ON" : "OFF")));
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("DPTBot Connection: %s", mod.getDiscordRamper() ? "ON" : "OFF")), (btn) -> {
+            btn.setMessage(Text.of(String.format("DPTBot Connection: %s", !mod.setDiscordRamper(!mod.getDiscordRamper()) ? "ON" : "OFF")));
             mod.refreshRamperStatus();
         }).dimensions(this.width/2 - 80 - 75, 75, 150, 20).build());
 
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Broadcast Notifications: %s", mod.getBroadcastToast() ? "ON" : "OFF")), (btn) -> {
-            btn.setMessage(Text.of(String.format("Broadcast Notifications: %s", !mod.setBroadcastToast(!mod.getBroadcastToast()) ? "ON" : "OFF")));
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Advanced Options: %s", this.showIPOptions ? "ON" : "OFF")), (btn) -> {
+            this.showIPOptions = !this.showIPOptions;
+            btn.setMessage(Text.of(String.format("Advanced Options: %s", this.showIPOptions ? "ON" : "OFF")));
+            this.host.visible = this.showIPOptions;
+            this.port.visible = this.showIPOptions;
+        }).dimensions(this.width/2 + 80 - 75, 75, 150, 20).build());
+
+        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Broadcast Notifs: %s", mod.getBroadcastToast() ? "ON" : "OFF")), (btn) -> {
+            btn.setMessage(Text.of(String.format("Broadcast Notifs: %s", !mod.setBroadcastToast(!mod.getBroadcastToast()) ? "ON" : "OFF")));
         }).dimensions(this.width/2 - 80 - 75, 100, 150, 20).build());
 
         this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Broadcast Chat: %s", mod.getBroadcastChat() ? "ON" : "OFF")), (btn) -> {
@@ -48,13 +53,6 @@ public class DPTBotConfigScreen extends Screen {
         this.port.setText(Integer.toString(mod.getDPTBotPort()));
         this.port.visible = false;
         this.addDrawableChild(this.port);
-
-        this.addDrawableChild(ButtonWidget.builder(Text.of(String.format("Advanced DPTBot options: %s",this.showIPOptions ? "ON" : "OFF")), (btn) -> {
-            this.showIPOptions = !this.showIPOptions;
-            btn.setMessage(Text.of(String.format("Advanced DPTBot options: %s", this.showIPOptions ? "ON" : "OFF")));
-            this.host.visible = this.showIPOptions;
-            this.port.visible = this.showIPOptions;
-        }).dimensions(this.width/2 + 80 - 75, 75, 150, 20).build());
 
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
