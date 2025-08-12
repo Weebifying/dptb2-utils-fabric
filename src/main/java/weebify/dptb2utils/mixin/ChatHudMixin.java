@@ -84,7 +84,6 @@ public class ChatHudMixin {
         MinecraftClient mc = MinecraftClient.getInstance();
 
         String msg = toLegacyText(message);
-        DPTB2Utils.LOGGER.info("msg: {}", msg);
         String content = msg.replaceAll("§[0-9a-fk-or]", "").trim();
         SoundEvent sound = SoundEvents.ENTITY_PLAYER_LEVELUP;
 
