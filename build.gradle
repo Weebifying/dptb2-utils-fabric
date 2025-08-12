@@ -1,86 +1,181 @@
+buildscript {
+    repositories {
+        maven { url "https://maven.minecraftforge.net" }
+        maven { url 'https://repo.spongepowered.org/maven'}
+    }
+    dependencies {
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT"
+        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
+    }
+}
+
 plugins {
-	id 'fabric-loom' version "${loom_version}"
-	id 'maven-publish'
+    id "java"
+    id "com.github.johnrengelman.shadow" version "2.0.4"
 }
 
-version = project.mod_version
-group = project.maven_group
+apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: 'org.spongepowered.mixin'
 
-base {
-	archivesName = project.archives_base_name
+version = "1.1.2" // The version number of your mod.
+group = "weebify.dptb2utils" // This is the group of the mod (usually domain or your name -> at.manuthebyte)
+archivesBaseName = "dptb2-utils-forge-1.8.9" // This is the name of the jar that is generated.
+
+sourceCompatibility = targetCompatibility = 1.8 // Java version to compile for.
+compileJava.options.encoding = "UTF-8" // Make sure that the encoding is set to UTF-8, so we have no encoding issues.
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9" // Version 1.8.9
+    runDir = "run" // Where to put the forge run data (mods, configs, etc.), in a normal minecraft installation this is .minecraft
+    mappings = "stable_22" // The mappings for 1.8.9
+    makeObfSourceJar = false // Disables the creation of a source jar
 }
 
+// This is the configuration for the shadow plugin, which is used to add libraries to the jar.
+configurations {
+    shade
+    compile.extendsFrom(shade)
+}
+
+// Configures the SpongePowered Repository
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+    maven { url 'https://repo.spongepowered.org/maven/' }
 }
 
+def systemOs = System.getProperty("os.name").toLowerCase(Locale.ENGLISH)
+
+/**
+ * This is where we bundle mixins into the jar.
+ * shade -> bundles the library into the jar
+ * compile -> library only available at compile time (not accessible at runtime)
+ */
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    shade('org.spongepowered:mixin:0.7.10-SNAPSHOT') {
+        exclude module: 'launchwrapper'
+        exclude module: 'guava'
+        exclude module: 'gson'
+        exclude module: 'commons-io'
+        exclude module: 'log4j-core'
+    }
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    shade 'org.java-websocket:Java-WebSocket:1.5.3'
 
-	implementation "org.java-websocket:Java-WebSocket:1.6.0"
-	include "org.java-websocket:Java-WebSocket:1.6.0"
+    if (systemOs.contains("mac"))
+    {
+        compile 'org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209'
+        compile 'org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209'
+        compile 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-nightly-20150209'
+    }
+    else if (systemOs.contains("linux"))
+    {
+        compile 'org.lwjgl.lwjgl:lwjgl_util:2.9.4-babric.1'
+        compile 'org.lwjgl.lwjgl:lwjgl:2.9.4-babric.1'
+        compile 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-babric.1'
+    }
 }
+
+if (systemOs.contains("mac"))
+{
+    configurations.all
+    {
+        resolutionStrategy
+        {
+            dependencySubstitution
+            {
+                substitute module('org.lwjgl.lwjgl:lwjgl_util:2.9.2-nightly-201408222') with module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209')
+                substitute module('org.lwjgl.lwjgl:lwjgl:2.9.2-nightly-201408222') with module('org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209')
+            }
+            force 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-nightly-20150209'
+        }
+    }
+} else if (systemOs.contains("linux"))
+{
+    configurations.all
+    {
+        resolutionStrategy
+        {
+            dependencySubstitution
+            {
+                substitute module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209') using module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-babric.1')
+                substitute module('org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209') using module('org.lwjgl.lwjgl:lwjgl:2.9.4-babric.1')
+            }
+            force 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-babric.1'
+        }
+    }
+}
+
 
 processResources {
-	inputs.property "version", project.version
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
 
-	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
-	}
+    // Replaces version in mcmod.info with the project version.
+    from(sourceSets.main.resources.srcDirs) {
+        include "mcmod.info"
+
+        //replace version and mcversion
+        expand "version":project.version, "mcversion":project.minecraft.version
+    }
+
+    // Copies all other resources.
+    from(sourceSets.main.resources.srcDirs) {
+        exclude "mcmod.info"
+    }
+
+    rename '(.+_at.cfg)', 'META-INF/$1'
 }
 
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+// This is the configuration for the shadow plugin, which is used to add libraries to the jar.
+shadowJar {
+    dependencies {}
+    configurations = [project.configurations.shade] // Adds the gradle configuration "shade" so we can use it.
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE // Prevents duplicates
+    classifier ""
 }
 
-java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+reobf {
+    // Reobfuscates the jar.
+    shadowJar {}
 }
 
+/**
+ * Adds the manifest values
+ * FMLCorePlugin -> Put the Mixin Loader here
+ * ModSide -> Client or Server
+ * TweakClass -> Mixin tweaker
+ * MixinConfigs -> Put your mixin config here (mixins.MODID.json)
+ */
 jar {
-	inputs.property "archivesName", project.base.archivesName
-
-	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}"}
-	}
+    manifest.attributes(
+        "FMLCorePlugin" : "weebify.dptb2utils.dptb2-utils.mixins.MixinLoader",
+        "ForceLoadAsMod": true,
+        "TweakOrder": 0,
+        "ModSide": "CLIENT",
+        'FMLCorePluginContainsFMLMod': true,
+        'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+        'MixinConfigs': 'mixins.dptb2-utils.json'
+    )
 }
 
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+// This adds the refmap.
+// (You do not need to create the refmap, it is created automatically by the mixin plugin)
+sourceSets {
+    main {
+        ext.refMap = "mixins.dptb2-utils.refmap.json"
+    }
 }
 
-task buildAndCopyToMods(type: Copy,dependsOn: 'build') {
-	from "build/libs"
-	into "C:/Users/weebi/OneDrive/Desktop/random shit/MultiMC/instances/1.21.4/.minecraft/mods"
-	include "*.jar"
+// Task that will build the mod and copy it to your instance (need to change the path to your instance)
+task buildAndCopyToMods(type: Copy, dependsOn: 'build') {
+    from "build/libs"
+    into "C:/Users/weebi/OneDrive/Desktop/random shit/MultiMC/instances/1.8.91/.minecraft/mods"
+    include "*.jar"
 }
+
+// Task that will build the mod and put it in the "run" folder, and then run the client.
+task buildCopyToRunModsAndRun(type: Copy, dependsOn: 'build') {
+    from "build/libs"
+    into "run/mods"
+    include "*.jar"
+}
+buildCopyToRunModsAndRun.finalizedBy runClient

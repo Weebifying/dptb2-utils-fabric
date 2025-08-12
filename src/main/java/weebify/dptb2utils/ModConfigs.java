@@ -8,8 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ModConfigs {
-    // TODO: a map specifically for class of properties
-
     public Map<String, JsonElement> notifsMap = new LinkedHashMap<>();
     public Map<String, JsonElement> othersMap = new LinkedHashMap<>();
     public Map<String, JsonElement> buttonTimerMap = new LinkedHashMap<>();

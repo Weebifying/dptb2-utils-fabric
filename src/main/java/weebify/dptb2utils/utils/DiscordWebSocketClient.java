@@ -1,101 +1,98 @@
 package weebify.dptb2utils.utils;
 
 import com.google.gson.Gson;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.ChatComponentText;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import weebify.dptb2utils.DPTB2Utils;
-import weebify.dptb2utils.gui.widget.NotificationToast;
 
+import java.awt.*;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.net.URI;
+import java.util.stream.Collectors;
 
 public class DiscordWebSocketClient extends WebSocketClient {
     private static final Gson GSON = new Gson();
-    private static final MinecraftClient MC = MinecraftClient.getInstance();
+    private static final Minecraft MC = Minecraft.getMinecraft();
     private static final DPTB2Utils mod = DPTB2Utils.getInstance();
 
-    public DiscordWebSocketClient(String uri) {
-        super(URI.create(uri));
+    public DiscordWebSocketClient(String serverUri) {
+        super(URI.create(serverUri));
     }
 
-    // run when the connection is established
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         mod.tryingToConnect = false;
-        if (MC.player != null) {
-            this.sendModMessage("greet", Map.of("name", MC.player.getGameProfile().getName(), "version", DPTB2Utils.VERSION));
+        if (MC.thePlayer != null) {
+            this.sendModMessage("greet", DPTB2Utils.mapOf("name", MC.thePlayer.getGameProfile().getName(), "version", DPTB2Utils.VERSION, "mc", MC.getVersion()));
         }
-        MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Connected!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
+        MC.addScheduledTask(() -> NotificationManager.getInstance().add("DPTBot", "Connected!", 0xFFFFFFFF, "mob.bat.takeoff"));
     }
 
-    // run when a message is received from the server
     @Override
     public void onMessage(String message) {
         Map<?, ?> data = GSON.fromJson(message, Map.class);
+        NotificationManager notifManager = NotificationManager.getInstance();
         String type = (String) data.get("type");
         String text = (String) data.get("text");
-        MinecraftClient.getInstance().execute(() -> {
-                if (type.equalsIgnoreCase("delegate")) {
-                    if (mod.getDiscordRamper() && MC.player != null) {
-                        MC.getToastManager().add(new NotificationToast("DPTBot", text, Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
-                        mod.isRamper = true;
-                        this.sendModMessage("confirm", Map.of("text", MC.player.getGameProfile().getName()));
-                    }
-                } else if (type.equalsIgnoreCase("revoke")) {
-                    if (mod.getDiscordRamper()) {
-                        MC.getToastManager().add(new NotificationToast("DPTBot", text, Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
-                        mod.isRamper = false;
-                    }
-                } else if (type.equalsIgnoreCase("broadcast")) {
-                    String source = data.get("source") != null ? (String) data.get("source") : "???";
-                    String name = data.get("name") != null ? (String) data.get("name") : "Unknown";
+        Minecraft.getMinecraft().addScheduledTask(() -> {
+            if (type.equalsIgnoreCase("delegate")) {
+                if (mod.getDiscordRamper() && MC.thePlayer != null) {
+                    notifManager.add("DPTBot", text, 0xFFFFFFFF, "mob.bat.takeoff");
+                    mod.isRamper = true;
+                    this.sendModMessage("confirm", DPTB2Utils.mapOf("text", MC.thePlayer.getGameProfile().getName()));
+                }
+            } else if (type.equalsIgnoreCase("revoke")) {
+                if (mod.getDiscordRamper()) {
+                    notifManager.add("DPTBot", text, 0xFFFFFFFF, "mob.bat.takeoff");
+                    mod.isRamper = false;
+                }
+            } else if (type.equalsIgnoreCase("broadcast")) {
+                String source = data.get("source") != null ? (String) data.get("source") : "???";
+                String name = data.get("name") != null ? (String) data.get("name") : "Unknown";
 
-                    StringBuilder sb = new StringBuilder("§8[");
-                    if (source.equalsIgnoreCase("DISC")) {
-                        sb.append("§9DISC§r").append("§8]§r ").append(String.format("§9%s§r", name));
-                    } else if (source.equalsIgnoreCase("WPTB")) {
-                        sb.append("§6WPTB§r").append("§8]§r ").append(String.format("§6%s§r", name));
-                    } else {
-                        sb.append("§4???§r").append("§8]§r ").append(name);
-                    }
-                    sb.append(": ").append(text);
+                StringBuilder sb = new StringBuilder("§8[");
+                if (source.equalsIgnoreCase("DISC")) {
+                    sb.append("§9DISC§r").append("§8]§r ").append(String.format("§9%s§r", name));
+                } else if (source.equalsIgnoreCase("WPTB")) {
+                    sb.append("§6WPTB§r").append("§8]§r ").append(String.format("§6%s§r", name));
+                } else if (source.equalsIgnoreCase("CONSOLE")) {
+                    sb.append("§cCONSOLE§r").append("§8]§r ").append(String.format("§c%s§r", name));
+                } else {
+                    sb.append("???").append("§8]§r ").append(name);
+                }
+                sb.append(": ").append(text);
 
-                    if (mod.getBroadcastToast()) {
-                        int color = source.equalsIgnoreCase("DISC") ? 0xFF5555FF : (source.equalsIgnoreCase("WPTB") ? 0xFFFFAA00 : 0xFFFF5555);
-                        MC.getToastManager().add(new NotificationToast(String.format("[%s] %s", source, name), text, color, SoundEvents.BLOCK_NOTE_BLOCK_PLING.value()));
-                    }
+                if (mod.getBroadcastToast()) {
+                    int color = source.equalsIgnoreCase("DISC") ? 0xFF5555FF : (source.equalsIgnoreCase("WPTB") ? 0xFFFFAA00 : (source.equalsIgnoreCase("CONSOLE") ? 0xFFFF5555 : 0xFFFFFFFF));
+                    notifManager.add(String.format("[%s] %s", source, name), text, color, "note.pling");
+                }
 
-                    if (MC.player != null && mod.getBroadcastChat()) {
-                        MC.player.sendMessage(Text.literal(sb.toString()), false);
-                        if (!mod.getBroadcastToast()) {
-                            MC.getSoundManager().play(PositionedSoundInstance.master(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 1, 1));
-                        }
-                    }
-                } else if (type.equalsIgnoreCase("askTabList")) {
-                    String id = (String) data.get("id");
-                    if (MC.getNetworkHandler() != null) {
-                        List<String> players = MC.getNetworkHandler().getPlayerList().stream()
-                                .map(player -> player.getProfile().getName())
-                                .toList();
-                        this.sendModMessage("tabList", Map.of("id", id, "players", players));
+                if (MC.thePlayer != null && mod.getBroadcastChat()) {
+                    MC.thePlayer.addChatMessage(new ChatComponentText(sb.toString()));
+                    if (!mod.getBroadcastToast()) {
+                        MC.thePlayer.playSound("note.pling", 1, 1);
                     }
                 }
+            } else if (type.equalsIgnoreCase("askTabList")) {
+                String id = (String) data.get("id");
+                if (MC.getNetHandler() != null) {
+                    List<String> players = MC.getNetHandler().getPlayerInfoMap().stream()
+                            .map(player -> player.getGameProfile().getName())
+                            .collect(Collectors.toList());
+                    this.sendModMessage("tabList", DPTB2Utils.mapOf("id", id, "players", players));
+                }
+            }
         });
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         if (!mod.tryingToConnect) {
-            MC.getToastManager().add(new NotificationToast("DPTBot", String.format("Disconnected: %s (code:%s)", reason, code), Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF));
+            NotificationManager.getInstance().add("DPTBot", String.format("Disconnected: %s (code:%s)", reason, code), 0xFFFFFFFF, "mob.bat.takeoff");
         }
         DPTB2Utils.LOGGER.error("WebSocket connection closed: {} (code:{}, remote:{})", reason, code, remote);
         this.retryConnection();
@@ -104,24 +101,17 @@ public class DiscordWebSocketClient extends WebSocketClient {
     @Override
     public void onError(Exception ex) {
         if (!mod.tryingToConnect) {
-            MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Connecting to DPTBot failed!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
+            MC.addScheduledTask(() -> NotificationManager.getInstance().add("DPTBot", "Connecting to DPTBot failed!", 0xFFFFFFFF, "mob.bat.takeoff"));
         }
         ex.printStackTrace();
         this.retryConnection();
     }
 
-//    public void sendModMessage(String type, String message) {
-//        if (this.isOpen() && MC.player != null) {
-//            this.send(GSON.toJson(Map.of("type", type, "text", message)));
-//        }
-//    }
-
     public void sendModMessage(String type, Map<String, Object> data) {
         data = new HashMap<>(data);
         data.put("type", type);
         data.put("version", DPTB2Utils.VERSION);
-//        DPTB2Utils.LOGGER.info("Sending message to DPTBot: {}", data);
-        if (this.isOpen() && MC.player != null) {
+        if (this.isOpen() && MC.thePlayer != null) {
             this.send(GSON.toJson(data));
         }
     }

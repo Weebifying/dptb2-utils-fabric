@@ -2,387 +2,446 @@ package weebify.dptb2utils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.fabricmc.api.ClientModInitializer;
-
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ServerInfo;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.scoreboard.*;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
-import net.minecraft.util.Formatting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import weebify.dptb2utils.gui.screen.ButtonTimerConfigScreen;
-import weebify.dptb2utils.gui.widget.NotificationToast;
-import weebify.dptb2utils.gui.screen.ModMenuScreen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.command.CommandBase;
+import net.minecraft.command.CommandException;
+import net.minecraft.command.ICommandSender;
+import net.minecraft.network.play.server.S3BPacketScoreboardObjective;
+import net.minecraft.scoreboard.Score;
+import net.minecraft.scoreboard.ScoreObjective;
+import net.minecraft.scoreboard.ScorePlayerTeam;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.spongepowered.asm.mixin.Unique;
+import weebify.dptb2utils.gui.screen.GuiButtonTimerConfig;
+import weebify.dptb2utils.gui.screen.GuiModMenu;
 import weebify.dptb2utils.utils.ButtonTimerManager;
 import weebify.dptb2utils.utils.DelayedTask;
 import weebify.dptb2utils.utils.DiscordWebSocketClient;
+import weebify.dptb2utils.utils.NotificationManager;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
 
-public class DPTB2Utils implements ClientModInitializer {	
-	public static final String MOD_ID = "dptb2-utils";
-	public static final String VERSION = "1.1.1";
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+@Mod(modid = DPTB2Utils.MOD_ID, version = DPTB2Utils.VERSION)
+public class DPTB2Utils {
+    public static final String MOD_ID = "dptb2-utils";
+    public static final String VERSION = "1.1.2";
+    public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
-	public ModConfigs config;
-	private File saveFile;
-	private long lastSaved;
+    public ModConfigs config;
+    private File saveFile;
+    private long lastSaved;
 
-	private boolean displayScreen = false;
-	public boolean isInDPTB2 = false;
-	public boolean isRamper = false;
-	public boolean tryingToConnect = false;
+    public boolean isInDPTB2 = false;
+    public boolean isRamper = false;
+    public boolean tryingToConnect = false;
+    public boolean checkedJoin = false;
 
-	public List<DelayedTask> scheduledTasks = new ArrayList<>();
+    public List<DelayedTask> scheduledTasks = new ArrayList<>();
 
-	private static final MinecraftClient mc = MinecraftClient.getInstance();
-	private static DPTB2Utils instance;
-	public static final Gson GSON = new Gson();
+    private static final Minecraft mc = Minecraft.getMinecraft();
+    private static DPTB2Utils instance;
+    public static final Gson GSON = new Gson();
 
-//	public static String HOST = "79.99.40.71";
-//	public static int PORT = 6426;
-	public DiscordWebSocketClient websocketClient;
+    public DiscordWebSocketClient websocketClient;
 
-	public List<Text> bootsList = new ArrayList<>();
+    public List<String> bootsList = new ArrayList<>();
 
-	public static DPTB2Utils getInstance() {
-		return instance;
-	}
+    public static DPTB2Utils getInstance() {
+        return instance;
+    }
 
-	@Override
-	public void onInitializeClient() {
-		instance = this;
-		this.config = new ModConfigs();
-		this.saveFile = new File(mc.runDirectory + "/config", "weebify_dptb2utils.json");
-		try {
-			if (this.saveFile.createNewFile()) {
-				try (FileWriter fw = new FileWriter(this.saveFile)) {
-					GSON.toJson(this.config, fw);
-				}
-			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		this.lastSaved = saveFile.lastModified();
-		this.loadSettings();
+    @Mod.EventHandler
+    public void init(FMLInitializationEvent event) {
+        instance = this;
+        this.config = new ModConfigs();
+        this.saveFile = new File(mc.mcDataDir + "/config", "weebify_dptb2utils.json");
+        try {
+            if (this.saveFile.createNewFile()) {
+                try (FileWriter fw = new FileWriter(this.saveFile)) {
+                    GSON.toJson(this.config, fw);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        this.lastSaved = saveFile.lastModified();
+        this.loadSettings();
 
-		initializeCommands();
-		initializeEvents();
-	}
+        this.initializeCommands();
+        MinecraftForge.EVENT_BUS.register(this);
+    }
 
-	public void scheduleTask(int ticks, Runnable task) {
-		this.scheduledTasks.add(new DelayedTask(ticks, task));
-	}
+    public void scheduleTask(int ticks, Runnable task) {
+        this.scheduledTasks.add(new DelayedTask(ticks, task));
+    }
 
-	public void buttonTimerReset() {
-		ButtonTimerManager.buttonTimer = -1;
-		ButtonTimerManager.isMayhem = false;
-		ButtonTimerManager.isChaos = false;
-		ButtonTimerManager.isDisabled = false;
-		ButtonTimerManager.chaosCounter = 0;
-	}
+    public void buttonTimerReset() {
+        ButtonTimerManager.buttonTimer = -1;
+        ButtonTimerManager.isMayhem = false;
+        ButtonTimerManager.isChaos = false;
+        ButtonTimerManager.isDisabled = false;
+        ButtonTimerManager.chaosCounter = 0;
+    }
 
-	private void initializeEvents() {
-		ClientTickEvents.START_CLIENT_TICK.register(this::onClientTick);
-		ClientTickEvents.END_CLIENT_TICK.register((var) -> {
-			scheduledTasks.removeIf(DelayedTask::tick);
-		});
-		// detecting whether the player is in DPTB2
-		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-			this.buttonTimerReset();
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            if (this.saveFile.lastModified() > this.lastSaved) {
+                this.loadSettings();
+                this.lastSaved = this.saveFile.lastModified();
+            }
 
-			ServerInfo serverEntry = client.getCurrentServerEntry();
-			if (serverEntry == null) {
-				this.isInDPTB2 = false;
-				return;
-			}
-			if (!serverEntry.address.toLowerCase().contains("hypixel.net")) {
-				this.isInDPTB2 = false;
-				return;
-			}
+            if (this.isInDPTB2) {
+                if (ButtonTimerManager.buttonTimer >= 0) {
+                    ButtonTimerManager.buttonTimer += 1;
+                }
+            }
+        } else if (event.phase == TickEvent.Phase.END) {
+            scheduledTasks.removeIf(DelayedTask::tick);
+        }
+    }
 
-			this.scheduleTask(20, () -> {
-				if (client.world == null) return;
+    @SubscribeEvent
+    public void onEntityJoinWorld(EntityJoinWorldEvent event) {
+        if (event.world.isRemote && event.entity == mc.thePlayer && !this.checkedJoin) {
+            this.buttonTimerReset();
+            this.checkedJoin = true;
+            this.scheduleTask(10, () -> this.checkedJoin = false);
 
-				Scoreboard scoreboard = client.world.getScoreboard();
-				ScoreboardObjective objective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+            ServerData serverData = mc.getCurrentServerData();
+            if (serverData == null) {
+                this.isInDPTB2 = false;
+                return;
+            }
 
-				if (objective != null) {
-					String title = objective.getDisplayName().getString().toLowerCase();
-					Text[] sidebarEntries =scoreboard.getScoreboardEntries(objective)
-							.stream()
-							.filter(score -> !score.hidden())
-							.sorted(Comparator.comparing(ScoreboardEntry::value).reversed().thenComparing(ScoreboardEntry::owner, String.CASE_INSENSITIVE_ORDER))
-							.map(scoreboardEntry -> {
-								Team team = scoreboard.getScoreHolderTeam(scoreboardEntry.owner());
-								Text textx = scoreboardEntry.name();
-                                return (Text) Team.decorateName(team, textx);
-							})
-							.toArray(Text[]::new);
+            if (!serverData.serverIP.toLowerCase().contains("hypixel.net")) {
+                this.isInDPTB2 = false;
+                return;
+            }
 
-					StringBuilder s = new StringBuilder();
-					for (Text entry : sidebarEntries) {
-						s.append(entry.getString());
-					}
+            this.scheduleTask(20, () -> {
+                if (mc.theWorld == null) return;
 
-					String content = s.toString().toLowerCase().replaceAll("§\\w", "");
+                Scoreboard scoreboard = mc.theWorld.getScoreboard();
+                ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
 
-					this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
-//					LOGGER.info("isInDPTB2 = {}", this.isInDPTB2);
-					if (this.isInDPTB2) client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
-					this.refreshRamperStatus();
-				}
-			});
-		});
+                if (objective != null) {
+                    String title = objective.getDisplayName().toLowerCase();
+                    List<Score> scores = (List<Score>) scoreboard.getSortedScores(objective);
+                    Collections.reverse(scores);
 
-		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-			this.buttonTimerReset();
-			if (websocketClient != null && websocketClient.isOpen()) {
-				websocketClient.close();
-			}
-		});
+                    StringBuilder s = new StringBuilder();
+                    for (Score score : scores) {
+                        ScorePlayerTeam team = scoreboard.getPlayersTeam(score.getPlayerName());
+                        String line = ScorePlayerTeam.formatPlayerName(team, "");
+                        s.append(line);
+                    }
 
-		// button timer hud
-		HudRenderCallback.EVENT.register(((drawContext, renderTickCounter) -> {
-			MinecraftClient mc = MinecraftClient.getInstance();
-			if (this.isInDPTB2 && this.getButtonTimerEnabled() && !(mc.currentScreen instanceof ButtonTimerConfigScreen)) {
-				int width = mc.getWindow().getScaledWidth();
-				int height = mc.getWindow().getScaledHeight();
-				Text text = ButtonTimerManager.tickToTime(ButtonTimerManager.buttonTimer);
-				int textWidth = mc.textRenderer.getWidth(text);
-				if (this.getButtonTimerRenderBG()) {
-					drawContext.fill(
-							(int) (width*this.getButtonTimerConfigs("posX", Float.class)),
-							(int) (height*this.getButtonTimerConfigs("posY", Float.class)),
-							(int) (width*this.getButtonTimerConfigs("posX", Float.class)) + textWidth + 8,
-							(int) (height*this.getButtonTimerConfigs("posY", Float.class)) + 15,
-							0x63000000 // ballin it, worked ig
-					);
-				}
+                    String content = s.toString().toLowerCase().replaceAll("§\\w", "").trim();
 
-				drawContext.drawText(
-						mc.textRenderer, text,
-						(int) (width*this.getButtonTimerConfigs("posX", Float.class)) + 4,
-						(int) (height*this.getButtonTimerConfigs("posY", Float.class)) + 4,
-						Colors.WHITE,
-						this.getButtonTimerTextShadow()
-				);
-			}
-		}));
-	}
+                    this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
 
-	private void initializeCommands() {
-		ClientCommandRegistrationCallback.EVENT.register(this::commandModMenu);
-		ClientCommandRegistrationCallback.EVENT.register(this::commandBroadcast);
-	}
+                    if (this.isInDPTB2) NotificationManager.getInstance().add("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, "random.levelup");
+                    this.refreshRamperStatus();
+                }
+            });
+        }
+    }
 
-	private void onClientTick(MinecraftClient var) {
-		if (this.saveFile.lastModified() > this.lastSaved) {
-			this.loadSettings();
-			this.lastSaved = this.saveFile.lastModified();
-		}
+    @SubscribeEvent
+    public void onClientDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
+       this.buttonTimerReset();
+       if (websocketClient != null && websocketClient.isOpen()) {
+           websocketClient.close();
+       }
+    }
 
-		if (this.displayScreen) {
-			this.displayScreen = false;
-			mc.setScreen(new ModMenuScreen(this));
-		}
+    @SubscribeEvent
+    public void onRenderOverlay(RenderGameOverlayEvent.Post event) {
+        if (this.isInDPTB2 && this.getButtonTimerEnabled() && !(mc.currentScreen instanceof GuiButtonTimerConfig)) {
+            ScaledResolution scaledRes = new ScaledResolution(mc);
+            int width = scaledRes.getScaledWidth();
+            int height = scaledRes.getScaledHeight();
+            String text = ButtonTimerManager.tickToTime(ButtonTimerManager.buttonTimer);
+            int textWidth = mc.fontRendererObj.getStringWidth(text);
+            if (this.getButtonTimerRenderBG()) {
+                Gui.drawRect(
+                        (int) (width*this.getButtonTimerConfigs("posX", Float.class)),
+                        (int) (height*this.getButtonTimerConfigs("posY", Float.class)),
+                        (int) (width*this.getButtonTimerConfigs("posX", Float.class)) + textWidth + 8,
+                        (int) (height*this.getButtonTimerConfigs("posY", Float.class)) + 15,
+                        0x63000000 // ballin it, worked ig
+                );
+            }
 
-		if (this.isInDPTB2) {
-			if (ButtonTimerManager.buttonTimer >= 0) {
-				ButtonTimerManager.buttonTimer += 1;
-			}
-		}
-	}
+            mc.fontRendererObj.drawString(
+                    text,
+                    (int) (width*this.getButtonTimerConfigs("posX", Float.class)) + 4,
+                    (int) (height*this.getButtonTimerConfigs("posY", Float.class)) + 4,
+                    0xFFFFFFFF,
+                    this.getButtonTimerTextShadow()
+            );
+        }
 
-	private void commandModMenu(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
-		LiteralCommandNode<FabricClientCommandSource> c = dispatcher.register(
-				ClientCommandManager.literal("dptb2")
-						.executes(context -> {
-							this.displayScreen = true; // necessary to open the config screen 1 tick late, stupid shit idk why
-							return 1;
-						})
-		);
-	}
 
-	private void commandBroadcast(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
-		LiteralCommandNode<FabricClientCommandSource> c = dispatcher.register(
-				ClientCommandManager.literal("broadcast")
-						.then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
-						.executes(context -> {
-							if (mc.player != null) {
-								if (websocketClient != null && websocketClient.isOpen()) {
-									String msg = StringArgumentType.getString(context, "message");
-									try {
-										websocketClient.sendModMessage("playerBroadcast", Map.of("text", msg, "name", mc.player.getGameProfile().getName()));
-										if (!this.getBroadcastChat()) {
-											mc.player.sendMessage(Text.literal("Broadcast message: " + msg).formatted(Formatting.GREEN), false);
-										}
-									} catch (Exception e) {
-										LOGGER.error("Failed to send broadcast message!", e);
-										mc.player.sendMessage(Text.literal("Failed to send broadcast message!").formatted(Formatting.RED), false);
-									}
-								} else {
-									mc.player.sendMessage(Text.literal("Not connected to DPTBot!").formatted(Formatting.RED), false);
-								}
-							}
-							return 1;
-						})
-					)
-		);
-	}
+        // also gpt
+        // use ElementType.ALL to draw after everything (adjust if you want different timing)
+        if (event.type != RenderGameOverlayEvent.ElementType.ALL) return;
+        NotificationManager.getInstance().render(event.resolution);
+    }
 
-	public void refreshRamperStatus() {
-		String host = this.getDPTBotHost();
-		int port = this.getDPTBotPort();
-		if (this.isInDPTB2 && this.getDiscordRamper()) {
-			LOGGER.info("Attempting Websocket connection to ws://{}:{}", host, port);
-			websocketClient = new DiscordWebSocketClient(String.format("ws://%s:%s", host, port));
-			websocketClient.connect();
-		} else {
-			this.isRamper = false;
-			if (websocketClient != null && websocketClient.isOpen()) {
-				LOGGER.info("Closing Websocket connection to ws://{}:{}", host, port);
-				websocketClient.close();
-			}
-		}
-	}
+    private void initializeCommands() {
+        ClientCommandHandler.instance.registerCommand(new CommandModMenu());
+        ClientCommandHandler.instance.registerCommand(new CommandBroadcast());
+    }
 
-	public void saveSettings() {
-		try (FileWriter fw = new FileWriter(this.saveFile)) {
-			GSON.toJson(this.config, fw);
-			LOGGER.info("Settings saved!");
-		} catch (IOException e) {
-			LOGGER.error("Failed to save settings!", e);
-			throw new RuntimeException(e);
-		}
-	}
+    public static class CommandModMenu extends CommandBase {
+        @Override
+        public String getCommandName() {
+            return "dptb2";
+        }
+        @Override
+        public String getCommandUsage(ICommandSender sender) {
+            return "/" +getCommandName();
+        }
+        @Override
+        public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+            MinecraftForge.EVENT_BUS.register(this);
+        }
+        @SubscribeEvent
+        public void onClientTick(TickEvent.ClientTickEvent event) {
+            if (event.phase == TickEvent.Phase.START) {
+                MinecraftForge.EVENT_BUS.unregister(this);
+                Minecraft.getMinecraft().displayGuiScreen(new GuiModMenu(DPTB2Utils.getInstance()));
+            }
+        }
+        public int getRequiredPermissionLevel() {
+            return 0;
+        }
+        public boolean canCommandSenderUseCommand(ICommandSender sender) {
+            return true;
+        }
+    }
 
-	public void loadSettings() {
-		try (FileReader fr = new FileReader(this.saveFile)) {
-			this.config = GSON.fromJson(fr, ModConfigs.class);
-			LOGGER.info("Settings loaded!");
-		} catch (IOException e) {
-			LOGGER.error("Failed to load settings!", e);
-			throw new RuntimeException(e);
-		}
-	}
+    public static class CommandBroadcast extends CommandBase {
+        @Override
+        public String getCommandName() {
+            return "broadcast";
+        }
+        @Override
+        public List<String> getCommandAliases() {
+            List<String> list = new ArrayList<>();
+            list.add("bc");
+            return list;
+        }
+        @Override
+        public String getCommandUsage(ICommandSender sender) {
+            return "/" +getCommandName();
+        }
+        @Override
+        public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+            DPTB2Utils mod = DPTB2Utils.getInstance();
+            if (mc.thePlayer != null) {
+                if (mod.websocketClient != null && mod.websocketClient.isOpen()) {
+                    String msg = String.join(" ", args);
+                    try {
+                        mod.websocketClient.sendModMessage("playerBroadcast", DPTB2Utils.mapOf("text", msg, "name", mc.thePlayer.getGameProfile().getName()));
+                        if (!mod.getBroadcastChat()) {
+                            mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.GREEN + "Broadcast message: " + msg));
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to send broadcast message!", e);
+                        mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Failed to send broadcast message!"));
+                    }
+                } else {
+                    mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Not connected to DPTBot!"));
+                }
+            }
+        }
+        public int getRequiredPermissionLevel() {
+            return 0;
+        }
+        public boolean canCommandSenderUseCommand(ICommandSender sender) {
+            return true;
+        }
+    }
 
-	public <T> T getConfig(Map<String, JsonElement> map, Map<String, JsonElement> defaultMap, String key, Class<T> clazz) {
-		if (!map.containsKey(key)) {
-			map.put(key, defaultMap.get(key));
-		}
-		return GSON.fromJson(map.get(key), clazz);
-	}
-	public <T> T setConfig(Map<String, JsonElement> map, String key, T value, Class<T> clazz) {
-		JsonElement jsonValue = GSON.toJsonTree(value, clazz);
-		JsonElement oldValue = map.put(key, jsonValue);
-		return GSON.fromJson(oldValue, clazz);
-	}
+    public void refreshRamperStatus() {
+        String host = this.getDPTBotHost();
+        int port = this.getDPTBotPort();
+        if (this.isInDPTB2 && this.getDiscordRamper()) {
+            LOGGER.info("Attempting Websocket connection to ws://{}:{}", host, port);
+            websocketClient = new DiscordWebSocketClient(String.format("ws://%s:%s", host, port));
+            websocketClient.connect();
+        } else {
+            this.isRamper = false;
+            if (websocketClient != null && websocketClient.isOpen()) {
+                LOGGER.info("Closing Websocket connection to ws://{}:{}", host, port);
+                websocketClient.close();
+            }
+        }
+    }
 
-	public <T> T getNotifs(String key, Class<T> clazz) {
-		return this.getConfig(this.config.notifsMap, ModConfigs.notifsDefaultMap, key, clazz);
-	}
-	public <T> T getButtonTimerConfigs(String key, Class<T> clazz) {
-		return this.getConfig(this.config.buttonTimerMap, ModConfigs.buttonTimerDefaultMap, key, clazz);
-	}
-	public <T> T getItemCooldownConfigs(String key, Class<T> clazz) {
-		return this.getConfig(this.config.itemCooldownMap, ModConfigs.itemCooldownDefaultMap, key, clazz);
-	}
-	public boolean getAutoCheer() {
-		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "autoCheer", Boolean.class);
-	}
-	public boolean getDiscordRamper() {
-		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "discordRamper", Boolean.class);
-	}
-	public String getDPTBotHost() {
-		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "dptbotHost", String.class);
-	}
-	public int getDPTBotPort() {
-		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "dptbotPort", Integer.class);
-	}
-	public boolean getBroadcastToast() {
-		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "broadcastToast", Boolean.class);
-	}
-	public boolean getBroadcastChat() {
-		return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "broadcastChat", Boolean.class);
-	}
+    public void saveSettings() {
+        try (FileWriter fw = new FileWriter(this.saveFile)) {
+            GSON.toJson(this.config, fw);
+            LOGGER.info("Settings saved!");
+        } catch (IOException e) {
+            LOGGER.error("Failed to save settings!", e);
+            throw new RuntimeException(e);
+        }
+    }
 
-	public boolean getBoolNotifs(String key) {
-		return this.getNotifs(key, Boolean.class);
-	}
-	public boolean getButtonTimerEnabled() {
-		return this.getButtonTimerConfigs("enabled", Boolean.class);
-	}
-	public boolean getButtonTimerTextShadow() {
-		return this.getButtonTimerConfigs("textShadow", Boolean.class);
-	}
-	public boolean getButtonTimerRenderBG() {
-		return this.getButtonTimerConfigs("renderBackground", Boolean.class);
-	}
+    public void loadSettings() {
+        try (FileReader fr = new FileReader(this.saveFile)) {
+            this.config = GSON.fromJson(fr, ModConfigs.class);
+            LOGGER.info("Settings loaded!");
+        } catch (IOException e) {
+            LOGGER.error("Failed to load settings!", e);
+            throw new RuntimeException(e);
+        }
+    }
 
-	public boolean getItemCooldownEnabled() {
-		return this.getItemCooldownConfigs("enabled", Boolean.class);
-	}
+    public <T> T getConfig(Map<String, JsonElement> map, Map<String, JsonElement> defaultMap, String key, Class<T> clazz) {
+        if (!map.containsKey(key)) {
+            map.put(key, defaultMap.get(key));
+        }
+        return GSON.fromJson(map.get(key), clazz);
+    }
+    public <T> T setConfig(Map<String, JsonElement> map, String key, T value, Class<T> clazz) {
+        JsonElement jsonValue = GSON.toJsonTree(value, clazz);
+        JsonElement oldValue = map.put(key, jsonValue);
+        return GSON.fromJson(oldValue, clazz);
+    }
 
-	public boolean setAutoCheer(boolean value) {
-		return this.setConfig(this.config.othersMap, "autoCheer", value, Boolean.class);
-	}
-	public boolean setDiscordRamper(boolean value) {
-		return this.setConfig(this.config.othersMap, "discordRamper", value, Boolean.class);
-	}
-	public String setDPTBotHost(String value) {
-		return this.setConfig(this.config.othersMap, "dptbotHost", value, String.class);
-	}
-	public int setDPTBotPort(int value) {
-		return this.setConfig(this.config.othersMap, "dptbotPort", value, Integer.class);
-	}
-	public boolean setBroadcastToast(boolean value) {
-		return this.setConfig(this.config.othersMap, "broadcastToast", value, Boolean.class);
-	}
-	public boolean setBroadcastChat(boolean value) {
-		return this.setConfig(this.config.othersMap, "broadcastChat", value, Boolean.class);
-	}
+    public <T> T getNotifs(String key, Class<T> clazz) {
+        return this.getConfig(this.config.notifsMap, ModConfigs.notifsDefaultMap, key, clazz);
+    }
+    public <T> T getButtonTimerConfigs(String key, Class<T> clazz) {
+        return this.getConfig(this.config.buttonTimerMap, ModConfigs.buttonTimerDefaultMap, key, clazz);
+    }
+    public <T> T getItemCooldownConfigs(String key, Class<T> clazz) {
+        return this.getConfig(this.config.itemCooldownMap, ModConfigs.itemCooldownDefaultMap, key, clazz);
+    }
+    public boolean getAutoCheer() {
+        return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "autoCheer", Boolean.class);
+    }
+    public boolean getDiscordRamper() {
+        return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "discordRamper", Boolean.class);
+    }
+    public String getDPTBotHost() {
+        return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "dptbotHost", String.class);
+    }
+    public int getDPTBotPort() {
+        return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "dptbotPort", Integer.class);
+    }
+    public boolean getBroadcastToast() {
+        return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "broadcastToast", Boolean.class);
+    }
+    public boolean getBroadcastChat() {
+        return this.getConfig(this.config.othersMap, ModConfigs.othersDefaultMap, "broadcastChat", Boolean.class);
+    }
 
-	public <T> T setNotifs(String key, T value, Class<T> clazz) {
-		return this.setConfig(this.config.notifsMap, key, value, clazz);
-	}
-	public <T> T setButtonTimerConfigs(String key, T value, Class<T> clazz) {
-		return this.setConfig(this.config.buttonTimerMap, key, value, clazz);
-	}
-	public <T> T setItemCooldownConfigs(String key, T value, Class<T> clazz) {
-		return this.setConfig(this.config.itemCooldownMap, key, value, clazz);
-	}
-	public boolean setBoolNotifs(String key, boolean value) {
-		return this.setNotifs(key, value, Boolean.class);
-	}
-	public boolean setButtonTimerEnabled(boolean value) {
-		return this.setButtonTimerConfigs("enabled", value, Boolean.class);
-	}
-	public boolean setButtonTimerTextShadow(boolean value) {
-		return this.setButtonTimerConfigs("textShadow", value, Boolean.class);
-	}
-	public boolean setButtonTimerRenderBG(boolean value) {
-		return this.setButtonTimerConfigs("renderBackground", value, Boolean.class);
-	}
-	public boolean setItemCooldownEnabled(boolean value) {
-		return this.setItemCooldownConfigs("enabled", value, Boolean.class);
-	}
+    public boolean getBoolNotifs(String key) {
+        return this.getNotifs(key, Boolean.class);
+    }
+    public boolean getButtonTimerEnabled() {
+        return this.getButtonTimerConfigs("enabled", Boolean.class);
+    }
+    public boolean getButtonTimerTextShadow() {
+        return this.getButtonTimerConfigs("textShadow", Boolean.class);
+    }
+    public boolean getButtonTimerRenderBG() {
+        return this.getButtonTimerConfigs("renderBackground", Boolean.class);
+    }
+
+    public boolean getItemCooldownEnabled() {
+        return this.getItemCooldownConfigs("enabled", Boolean.class);
+    }
+
+    public boolean setAutoCheer(boolean value) {
+        return this.setConfig(this.config.othersMap, "autoCheer", value, Boolean.class);
+    }
+    public boolean setDiscordRamper(boolean value) {
+        return this.setConfig(this.config.othersMap, "discordRamper", value, Boolean.class);
+    }
+    public String setDPTBotHost(String value) {
+        return this.setConfig(this.config.othersMap, "dptbotHost", value, String.class);
+    }
+    public int setDPTBotPort(int value) {
+        return this.setConfig(this.config.othersMap, "dptbotPort", value, Integer.class);
+    }
+    public boolean setBroadcastToast(boolean value) {
+        return this.setConfig(this.config.othersMap, "broadcastToast", value, Boolean.class);
+    }
+    public boolean setBroadcastChat(boolean value) {
+        return this.setConfig(this.config.othersMap, "broadcastChat", value, Boolean.class);
+    }
+
+    public <T> T setNotifs(String key, T value, Class<T> clazz) {
+        return this.setConfig(this.config.notifsMap, key, value, clazz);
+    }
+    public <T> T setButtonTimerConfigs(String key, T value, Class<T> clazz) {
+        return this.setConfig(this.config.buttonTimerMap, key, value, clazz);
+    }
+    public <T> T setItemCooldownConfigs(String key, T value, Class<T> clazz) {
+        return this.setConfig(this.config.itemCooldownMap, key, value, clazz);
+    }
+    public boolean setBoolNotifs(String key, boolean value) {
+        return this.setNotifs(key, value, Boolean.class);
+    }
+    public boolean setButtonTimerEnabled(boolean value) {
+        return this.setButtonTimerConfigs("enabled", value, Boolean.class);
+    }
+    public boolean setButtonTimerTextShadow(boolean value) {
+        return this.setButtonTimerConfigs("textShadow", value, Boolean.class);
+    }
+    public boolean setButtonTimerRenderBG(boolean value) {
+        return this.setButtonTimerConfigs("renderBackground", value, Boolean.class);
+    }
+    public boolean setItemCooldownEnabled(boolean value) {
+        return this.setItemCooldownConfigs("enabled", value, Boolean.class);
+    }
+
+    public static <K, V> Map<K, V> mapOf(K k1, V v1) {
+        Map<K, V> map = new HashMap<>();
+        map.put(k1, v1);
+        return Collections.unmodifiableMap(map);
+    }
+
+    public static <K, V> Map<K, V> mapOf(K k1, V v1, K k2, V v2) {
+        Map<K, V> map = new HashMap<>();
+        map.put(k1, v1);
+        map.put(k2, v2);
+        return Collections.unmodifiableMap(map);
+    }
+
+    public static <K, V> Map<K, V> mapOf(K k1, V v1, K k2, V v2, K k3, V v3) {
+        Map<K, V> map = new HashMap<>();
+        map.put(k1, v1);
+        map.put(k2, v2);
+        map.put(k3, v3);
+        return Collections.unmodifiableMap(map);
+    }
 }

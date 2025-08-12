@@ -2,6 +2,7 @@
 An utility mod for the Hypixel Housing game **Don't Press The Button 2**
 
 ### Current supported versions:
+- Forge 1.8.9
 - Fabric 1.21.4
 - Fabric 1.21.7
 
@@ -36,7 +37,7 @@ Run `/dptb2` in the chat to open the mod menu.
 
 # Installation
 ### Pre-built package
-You can find and download the latest stable release [here](https://github.com/Weebifying/dptb2-utils-fabric/releases/latest).
+You can find and download the latest stable release [here](https://github.com/Weebifying/dptb2-utils/releases/latest).
 
 ### Building from source
 You can build the mod from source by cloning this repository and running the following command:
