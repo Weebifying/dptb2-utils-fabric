@@ -74,36 +74,19 @@ dependencies {
     }
 }
 
-if (systemOs.contains("mac"))
-{
-    configurations.all
-    {
-        resolutionStrategy
-        {
-            dependencySubstitution
-            {
-                substitute module('org.lwjgl.lwjgl:lwjgl_util:2.9.2-nightly-201408222') with module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209')
-                substitute module('org.lwjgl.lwjgl:lwjgl:2.9.2-nightly-201408222') with module('org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209')
-            }
-            force 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-nightly-20150209'
-        }
-    }
-} else if (systemOs.contains("linux"))
-{
-    configurations.all
-    {
-        resolutionStrategy
-        {
-            dependencySubstitution
-            {
+configurations.all {
+    resolutionStrategy {
+        dependencySubstitution {
+            if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                substitute module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209') with module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-babric.1')
+                substitute module('org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209') with module('org.lwjgl.lwjgl:lwjgl:2.9.4-babric.1')
+            } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
                 substitute module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209') with module('org.lwjgl.lwjgl:lwjgl_util:2.9.4-babric.1')
                 substitute module('org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209') with module('org.lwjgl.lwjgl:lwjgl:2.9.4-babric.1')
             }
-            force 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-babric.1'
         }
     }
 }
-
 
 processResources {
     inputs.property "version", project.version
