@@ -3,7 +3,10 @@ package weebify.dptb2utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.api.ClientModInitializer;
 
@@ -21,6 +24,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.BlockPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import weebify.dptb2utils.gui.screen.ButtonTimerConfigScreen;
@@ -29,6 +33,7 @@ import weebify.dptb2utils.gui.screen.ModMenuScreen;
 import weebify.dptb2utils.utils.ButtonTimerManager;
 import weebify.dptb2utils.utils.DelayedTask;
 import weebify.dptb2utils.utils.DiscordWebSocketClient;
+import weebify.dptb2utils.utils.WaypointManager;
 
 import java.io.File;
 import java.io.FileReader;
@@ -39,7 +44,7 @@ import java.util.List;
 
 public class DPTB2Utils implements ClientModInitializer {	
 	public static final String MOD_ID = "dptb2-utils";
-	public static final String VERSION = "1.1.1";
+	public static final String VERSION = "1.1.2";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	public ModConfigs config;
@@ -57,8 +62,6 @@ public class DPTB2Utils implements ClientModInitializer {
 	private static DPTB2Utils instance;
 	public static final Gson GSON = new Gson();
 
-//	public static String HOST = "79.99.40.71";
-//	public static int PORT = 6426;
 	public DiscordWebSocketClient websocketClient;
 
 	public List<Text> bootsList = new ArrayList<>();
@@ -84,8 +87,10 @@ public class DPTB2Utils implements ClientModInitializer {
         this.lastSaved = saveFile.lastModified();
 		this.loadSettings();
 
-		initializeCommands();
-		initializeEvents();
+		this.initializeCommands();
+		this.initializeEvents();
+//		WaypointManager.initializeEvents();
+//		WaypointManager.initializeWaypoints();
 	}
 
 	public void scheduleTask(int ticks, Runnable task) {
@@ -146,7 +151,7 @@ public class DPTB2Utils implements ClientModInitializer {
 					String content = s.toString().toLowerCase().replaceAll("§\\w", "");
 
 					this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
-//					LOGGER.info("isInDPTB2 = {}", this.isInDPTB2);
+
 					if (this.isInDPTB2) client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
 					this.refreshRamperStatus();
 				}
@@ -192,6 +197,7 @@ public class DPTB2Utils implements ClientModInitializer {
 	private void initializeCommands() {
 		ClientCommandRegistrationCallback.EVENT.register(this::commandModMenu);
 		ClientCommandRegistrationCallback.EVENT.register(this::commandBroadcast);
+//		ClientCommandRegistrationCallback.EVENT.register(this::commandAddWP);
 	}
 
 	private void onClientTick(MinecraftClient var) {
@@ -222,29 +228,65 @@ public class DPTB2Utils implements ClientModInitializer {
 		);
 	}
 
+//	private void commandAddWP(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
+//		LiteralCommandNode<FabricClientCommandSource> c = dispatcher.register(
+//				ClientCommandManager.literal("addwp")
+//						.then(ClientCommandManager.argument("id", StringArgumentType.string())
+//						.then(ClientCommandManager.argument("coordX", FloatArgumentType.floatArg())
+//						.then(ClientCommandManager.argument("coordY", FloatArgumentType.floatArg())
+//						.then(ClientCommandManager.argument("coordZ", FloatArgumentType.floatArg())
+//						.then(ClientCommandManager.argument("label", StringArgumentType.greedyString())
+//						.executes(context -> {
+//							String id = StringArgumentType.getString(context, "id");
+//							float coordX = FloatArgumentType.getFloat(context, "coordX");
+//							float coordY = FloatArgumentType.getFloat(context, "coordY");
+//							float coordZ = FloatArgumentType.getFloat(context, "coordZ");
+//							String label = StringArgumentType.getString(context, "label");
+//
+//							mc.player.sendMessage(Text.literal(String.format("Added waypoint %s at (%f, %f, %f) with label '%s'", id, coordX, coordY, coordZ, label)).formatted(Formatting.GREEN), false);
+//							WaypointManager.addWaypoint(id, coordX, coordY, coordZ, label, 0xD2FFC8);
+//							return 1;
+//						}
+//						))))))
+//		);
+//	}
+
+	private void handleBroadcast(CommandContext<FabricClientCommandSource> context) {
+		if (mc.player != null) {
+			if (websocketClient != null && websocketClient.isOpen()) {
+				String msg = StringArgumentType.getString(context, "message");
+				try {
+					websocketClient.sendModMessage("playerBroadcast", Map.of("text", msg, "name", mc.player.getGameProfile().getName()));
+					if (!this.getBroadcastChat()) {
+						mc.player.sendMessage(Text.literal("Broadcast message: " + msg).formatted(Formatting.GREEN), false);
+					}
+				} catch (Exception e) {
+					LOGGER.error("Failed to send broadcast message!", e);
+					mc.player.sendMessage(Text.literal("Failed to send broadcast message!").formatted(Formatting.RED), false);
+				}
+			} else {
+				mc.player.sendMessage(Text.literal("Not connected to DPTBot!").formatted(Formatting.RED), false);
+			}
+		}
+	}
+
 	private void commandBroadcast(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
 		LiteralCommandNode<FabricClientCommandSource> c = dispatcher.register(
 				ClientCommandManager.literal("broadcast")
 						.then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
 						.executes(context -> {
-							if (mc.player != null) {
-								if (websocketClient != null && websocketClient.isOpen()) {
-									String msg = StringArgumentType.getString(context, "message");
-									try {
-										websocketClient.sendModMessage("playerBroadcast", Map.of("text", msg, "name", mc.player.getGameProfile().getName()));
-										if (!this.getBroadcastChat()) {
-											mc.player.sendMessage(Text.literal("Broadcast message: " + msg).formatted(Formatting.GREEN), false);
-										}
-									} catch (Exception e) {
-										LOGGER.error("Failed to send broadcast message!", e);
-										mc.player.sendMessage(Text.literal("Failed to send broadcast message!").formatted(Formatting.RED), false);
-									}
-								} else {
-									mc.player.sendMessage(Text.literal("Not connected to DPTBot!").formatted(Formatting.RED), false);
-								}
-							}
+							this.handleBroadcast(context);
 							return 1;
 						})
+					)
+		);
+		dispatcher.register(
+				ClientCommandManager.literal("bc")
+						.then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
+						.executes(context -> {
+							this.handleBroadcast(context);
+							return 1;
+						}).redirect(c)
 					)
 		);
 	}

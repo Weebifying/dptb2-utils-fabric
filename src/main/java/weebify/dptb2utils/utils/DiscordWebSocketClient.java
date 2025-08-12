@@ -32,7 +32,7 @@ public class DiscordWebSocketClient extends WebSocketClient {
     public void onOpen(ServerHandshake handshakedata) {
         mod.tryingToConnect = false;
         if (MC.player != null) {
-            this.sendModMessage("greet", Map.of("name", MC.player.getGameProfile().getName(), "version", DPTB2Utils.VERSION));
+            this.sendModMessage("greet", Map.of("name", MC.player.getGameProfile().getName(), "version", DPTB2Utils.VERSION, "mc", MC.getGameVersion()));
         }
         MC.execute(() -> MC.getToastManager().add(new NotificationToast("DPTBot", "Connected!", Colors.WHITE, SoundEvents.ENTITY_BAT_TAKEOFF)));
     }
@@ -64,13 +64,15 @@ public class DiscordWebSocketClient extends WebSocketClient {
                         sb.append("§9DISC§r").append("§8]§r ").append(String.format("§9%s§r", name));
                     } else if (source.equalsIgnoreCase("WPTB")) {
                         sb.append("§6WPTB§r").append("§8]§r ").append(String.format("§6%s§r", name));
+                    } else if (source.equalsIgnoreCase("CONSOLE")) {
+                        sb.append("§cCONSOLE§r").append("§8]§r ").append(String.format("§c%s§r", name));
                     } else {
-                        sb.append("§4???§r").append("§8]§r ").append(name);
+                        sb.append("???").append("§8]§r ").append(name);
                     }
                     sb.append(": ").append(text);
 
                     if (mod.getBroadcastToast()) {
-                        int color = source.equalsIgnoreCase("DISC") ? 0xFF5555FF : (source.equalsIgnoreCase("WPTB") ? 0xFFFFAA00 : 0xFFFF5555);
+                        int color = source.equalsIgnoreCase("DISC") ? 0xFF5555FF : (source.equalsIgnoreCase("WPTB") ? 0xFFFFAA00 : (source.equalsIgnoreCase("CONSOLE") ? 0xFFFF5555 : 0xFFFFFFFF));
                         MC.getToastManager().add(new NotificationToast(String.format("[%s] %s", source, name), text, color, SoundEvents.BLOCK_NOTE_BLOCK_PLING.value()));
                     }
 
