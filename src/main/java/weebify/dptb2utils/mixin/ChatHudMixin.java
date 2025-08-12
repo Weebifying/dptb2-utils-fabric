@@ -6,8 +6,11 @@ import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.toast.ToastManager;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+oximport net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,10 +22,7 @@ import weebify.dptb2utils.utils.ButtonTimerManager;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,12 +48,44 @@ public class ChatHudMixin {
         toastManager.add(new NotificationToast(title, message, color, mod.getBoolNotifs("dontDelaySfx") ? null : sfx));
     }
 
+    @Unique
+    private static String toLegacyText(Text text) {
+        StringBuilder sb = new StringBuilder();
+
+        text.visit((style, str) -> {
+            sb.append(styleToLegacy(style)).append(str).append("§r");
+            return Optional.empty();
+        }, Style.EMPTY);
+
+        return sb.toString();
+    }
+
+    @Unique
+    private static String styleToLegacy(Style style) {
+        StringBuilder codes = new StringBuilder();
+
+        if (style.getColor() != null) {
+            Formatting color = Formatting.byName(style.getColor().getName());
+            if (color != null) codes.append(color);
+        }
+
+        if (style.isBold()) codes.append(Formatting.BOLD);
+        if (style.isItalic()) codes.append(Formatting.ITALIC);
+        if (style.isUnderlined()) codes.append(Formatting.UNDERLINE);
+        if (style.isStrikethrough()) codes.append(Formatting.STRIKETHROUGH);
+        if (style.isObfuscated()) codes.append(Formatting.OBFUSCATED);
+
+        return codes.toString();
+    }
+
     @Inject(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At("HEAD"))
-    private void addMessageInject(Text message, CallbackInfo ci) {
+    private void addMessageInject(@NotNull Text message, CallbackInfo ci) {
         DPTB2Utils mod = DPTB2Utils.getInstance();
         MinecraftClient mc = MinecraftClient.getInstance();
 
-        String content = message.getString().replaceAll("§[0-9a-fk-or]", "").trim();
+        String msg = toLegacyText(message);
+        DPTB2Utils.LOGGER.info("msg: {}", msg);
+        String content = msg.replaceAll("§[0-9a-fk-or]", "").trim();
         SoundEvent sound = SoundEvents.ENTITY_PLAYER_LEVELUP;
 
         if (mod.getBoolNotifs("shopUpdate") && content.startsWith("* SHOP! New items available at the Rotating Shop!")) {
@@ -144,10 +176,10 @@ public class ChatHudMixin {
                      && !content.startsWith("Officer >")
                      && !content.startsWith("You'll be ")
                 ) {
-                    mod.websocketClient.sendModMessage("chat", Map.of("text", message.getString()));
+                    mod.websocketClient.sendModMessage("chat", Map.of("text", msg));
                 }
             } else if (content.matches("\\* .+")) {
-                handleSystemMessage(content, message.getString());
+                handleSystemMessage(content, msg);
             }
         }
     }
@@ -210,7 +242,10 @@ public class ChatHudMixin {
         if (counter == 0) {
             if (!bulks.isEmpty()) {
                 String bulkMessage = String.join("\n", bulks);
-                boolean format = !(bulkMessage.startsWith("* ➜ The BUTTON was just clicked by") || bulkMessage.startsWith("* [!] Whoever clicks the BUTTON next will not die"));
+                String trimmedBulk = bulkMessage.replaceAll("§[0-9a-fk-or]", "").trim();
+                boolean format = !(
+                        trimmedBulk.startsWith("* ➜ The BUTTON was just clicked by")
+                     || trimmedBulk.startsWith("* [!] Whoever clicks the BUTTON next will not die"));
                 bulks.clear();
                 DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", Map.of("text", format ? String.format("* \n%s\n* ", bulkMessage) : bulkMessage));
                 return;
@@ -287,6 +322,7 @@ public class ChatHudMixin {
             && !lower.startsWith("* join our discord")
             && !lower.startsWith("* https://")
             && !lower.startsWith("* apply for staff")
+            && !lower.startsWith("* [!] that was a slow run")
             && !lower.matches("\\* [0-9,]+⛂ gold & [0-9,]+xp from that completion streak!")
             && !lower.matches("\\* successfully converted [0-9,]+⛂ gold into stat form!")
             && !lower.matches("\\* total: [0-9,]+⛂ gold")
