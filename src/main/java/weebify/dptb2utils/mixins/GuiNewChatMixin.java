@@ -194,7 +194,10 @@ public class GuiNewChatMixin {
         if (counter == 0) {
             if (!bulks.isEmpty()) {
                 String bulkMessage = String.join("\n", bulks);
-                boolean format = !(bulkMessage.startsWith("* ➜ The BUTTON was just clicked by") || bulkMessage.startsWith("* [!] Whoever clicks the BUTTON next will not die"));
+                String trimmedBulk = bulkMessage.replaceAll("§[0-9a-fk-or]", "").trim();
+                boolean format = !(
+                        trimmedBulk.startsWith("* ➜ The BUTTON was just clicked by")
+                     || trimmedBulk.startsWith("* [!] Whoever clicks the BUTTON next will not die"));
                 bulks.clear();
                 DPTB2Utils.getInstance().websocketClient.sendModMessage("chat", DPTB2Utils.mapOf("text", format ? String.format("* \n%s\n* ", bulkMessage) : bulkMessage));
                 return;
