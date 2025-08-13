@@ -113,49 +113,7 @@ public class DPTB2Utils implements ClientModInitializer {
 		// detecting whether the player is in DPTB2
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
 			this.buttonTimerReset();
-
-			ServerInfo serverEntry = client.getCurrentServerEntry();
-			if (serverEntry == null) {
-				this.isInDPTB2 = false;
-				return;
-			}
-			if (!serverEntry.address.toLowerCase().contains("hypixel.net")) {
-				this.isInDPTB2 = false;
-				return;
-			}
-
-			this.scheduleTask(20, () -> {
-				if (client.world == null) return;
-
-				Scoreboard scoreboard = client.world.getScoreboard();
-				ScoreboardObjective objective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
-
-				if (objective != null) {
-					String title = objective.getDisplayName().getString().toLowerCase();
-					Text[] sidebarEntries =scoreboard.getScoreboardEntries(objective)
-							.stream()
-							.filter(score -> !score.hidden())
-							.sorted(Comparator.comparing(ScoreboardEntry::value).reversed().thenComparing(ScoreboardEntry::owner, String.CASE_INSENSITIVE_ORDER))
-							.map(scoreboardEntry -> {
-								Team team = scoreboard.getScoreHolderTeam(scoreboardEntry.owner());
-								Text textx = scoreboardEntry.name();
-                                return (Text) Team.decorateName(team, textx);
-							})
-							.toArray(Text[]::new);
-
-					StringBuilder s = new StringBuilder();
-					for (Text entry : sidebarEntries) {
-						s.append(entry.getString());
-					}
-
-					String content = s.toString().toLowerCase().replaceAll("§\\w", "");
-
-					this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
-
-					if (this.isInDPTB2) client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
-					this.refreshRamperStatus();
-				}
-			});
+			this.dptb2Check(client);
 		});
 
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
@@ -192,6 +150,51 @@ public class DPTB2Utils implements ClientModInitializer {
 				);
 			}
 		}));
+	}
+
+	public void dptb2Check(MinecraftClient client) {
+		ServerInfo serverEntry = client.getCurrentServerEntry();
+		if (serverEntry == null) {
+			this.isInDPTB2 = false;
+			return;
+		}
+		if (!serverEntry.address.toLowerCase().contains("hypixel.net")) {
+			this.isInDPTB2 = false;
+			return;
+		}
+
+		this.scheduleTask(20, () -> {
+			if (client.world == null) return;
+
+			Scoreboard scoreboard = client.world.getScoreboard();
+			ScoreboardObjective objective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+
+			if (objective != null) {
+				String title = objective.getDisplayName().getString().toLowerCase();
+				Text[] sidebarEntries =scoreboard.getScoreboardEntries(objective)
+						.stream()
+						.filter(score -> !score.hidden())
+						.sorted(Comparator.comparing(ScoreboardEntry::value).reversed().thenComparing(ScoreboardEntry::owner, String.CASE_INSENSITIVE_ORDER))
+						.map(scoreboardEntry -> {
+							Team team = scoreboard.getScoreHolderTeam(scoreboardEntry.owner());
+							Text textx = scoreboardEntry.name();
+							return (Text) Team.decorateName(team, textx);
+						})
+						.toArray(Text[]::new);
+
+				StringBuilder s = new StringBuilder();
+				for (Text entry : sidebarEntries) {
+					s.append(entry.getString());
+				}
+
+				String content = s.toString().toLowerCase().replaceAll("§\\w", "");
+
+				this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
+
+				if (this.isInDPTB2) client.getToastManager().add(new NotificationToast("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, SoundEvents.ENTITY_PLAYER_LEVELUP	));
+				this.refreshRamperStatus();
+			}
+		});
 	}
 
 	private void initializeCommands() {

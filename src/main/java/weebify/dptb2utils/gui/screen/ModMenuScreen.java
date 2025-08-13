@@ -12,6 +12,7 @@ import weebify.dptb2utils.DPTB2Utils;
 
 public class ModMenuScreen extends Screen {
     private final DPTB2Utils mod;
+    private ButtonWidget checkBtn;
 
     public ModMenuScreen(DPTB2Utils mod) {
         super(Text.literal("DPTB2 Utils"));
@@ -46,6 +47,16 @@ public class ModMenuScreen extends Screen {
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> {
             this.close();
         }).dimensions(this.width / 2 - 75, this.height - 30 - 10, 150, 20).build());
+        this.checkBtn = ButtonWidget.builder(Text.of("Rerun DPTB2 Check"), (btn) -> {
+            this.mod.dptb2Check(mc);
+            this.checkBtn.active = false;
+            this.mod.scheduleTask(25, () -> {
+                this.checkBtn.active = true;
+                this.checkBtn.visible = !mod.isInDPTB2;
+            });
+        }).dimensions(30, this.height - 30 - 10, 150, 20).build();
+        this.checkBtn.visible = !mod.isInDPTB2;
+        this.addDrawableChild(this.checkBtn);
     }
 
     @Override
@@ -62,6 +73,8 @@ public class ModMenuScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
+
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width/2, 20, Colors.WHITE);
+        context.drawCenteredTextWithShadow(this.textRenderer, String.format("isInDPTB2: %b", mod.isInDPTB2), this.width/2, this.height - 45 - 10, mod.isInDPTB2 ? 0xFF55FF55 : 0xFFFF5555);
     }
 }

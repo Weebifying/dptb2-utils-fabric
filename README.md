@@ -18,7 +18,8 @@ An utility mod for the Hypixel Housing game **Don't Press The Button 2**
 - **Boots Tracker**: Tracks the boots players have acquired in your current session.
 - **Button Timer**: HUD timer that shows how long ago the button was last pressed.
 - **DPTBot Integration**: Integrates with the DPTBot Discord bot for the VI+ discord's Chat Ramp:
-    - Enable the "Allow DPTBot Connection" option in the mod menu to connect to the bot when you join the DPTB2 housing.
+    - Enable the "DPTBot Connection" option in the mod menu to connect to the bot when you join the DPTB2 housing.
+    - Use `/broadcast` (or `/bc`) command to broadcast a message to everyone connected to DPTBot.
 - More coming soon...
 
 ## Advanced DTPBot options
