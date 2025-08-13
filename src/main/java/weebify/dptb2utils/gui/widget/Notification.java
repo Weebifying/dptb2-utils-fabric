@@ -102,7 +102,7 @@ public class Notification {
                 int yLine = y + getHeight()/2 - 9;
                 for (int i = 0; i < 2; i++) {
                     int idx = firstLineIndex + i;
-                    if (idx < size) {
+                    if (0 <= idx && idx < size) {
                         fr.drawString(descLines.get(idx), x + 30, yLine, drawColour);
                         yLine += 9;
                     }

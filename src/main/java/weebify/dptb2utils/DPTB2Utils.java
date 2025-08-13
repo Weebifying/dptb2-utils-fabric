@@ -130,44 +130,48 @@ public class DPTB2Utils {
             this.checkedJoin = true;
             this.scheduleTask(10, () -> this.checkedJoin = false);
 
-            ServerData serverData = mc.getCurrentServerData();
-            if (serverData == null) {
-                this.isInDPTB2 = false;
-                return;
-            }
-
-            if (!serverData.serverIP.toLowerCase().contains("hypixel.net")) {
-                this.isInDPTB2 = false;
-                return;
-            }
-
-            this.scheduleTask(20, () -> {
-                if (mc.theWorld == null) return;
-
-                Scoreboard scoreboard = mc.theWorld.getScoreboard();
-                ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
-
-                if (objective != null) {
-                    String title = objective.getDisplayName().toLowerCase();
-                    List<Score> scores = (List<Score>) scoreboard.getSortedScores(objective);
-                    Collections.reverse(scores);
-
-                    StringBuilder s = new StringBuilder();
-                    for (Score score : scores) {
-                        ScorePlayerTeam team = scoreboard.getPlayersTeam(score.getPlayerName());
-                        String line = ScorePlayerTeam.formatPlayerName(team, "");
-                        s.append(line);
-                    }
-
-                    String content = s.toString().toLowerCase().replaceAll("§\\w", "").trim();
-
-                    this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
-
-                    if (this.isInDPTB2) NotificationManager.getInstance().add("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, "random.levelup");
-                    this.refreshRamperStatus();
-                }
-            });
+            this.dptb2Check();
         }
+    }
+
+    public void dptb2Check() {
+        ServerData serverData = mc.getCurrentServerData();
+        if (serverData == null) {
+            this.isInDPTB2 = false;
+            return;
+        }
+
+        if (!serverData.serverIP.toLowerCase().contains("hypixel.net")) {
+            this.isInDPTB2 = false;
+            return;
+        }
+
+        this.scheduleTask(20, () -> {
+            if (mc.theWorld == null) return;
+
+            Scoreboard scoreboard = mc.theWorld.getScoreboard();
+            ScoreObjective objective = scoreboard.getObjectiveInDisplaySlot(1);
+
+            if (objective != null) {
+                String title = objective.getDisplayName().toLowerCase();
+                List<Score> scores = (List<Score>) scoreboard.getSortedScores(objective);
+                Collections.reverse(scores);
+
+                StringBuilder s = new StringBuilder();
+                for (Score score : scores) {
+                    ScorePlayerTeam team = scoreboard.getPlayersTeam(score.getPlayerName());
+                    String line = ScorePlayerTeam.formatPlayerName(team, "");
+                    s.append(line);
+                }
+
+                String content = s.toString().toLowerCase().replaceAll("§\\w", "").trim();
+
+                this.isInDPTB2 = title.contains("housing") && content.contains("don't press the button 2");
+
+                if (this.isInDPTB2) NotificationManager.getInstance().add("DPTB2 Utils", "You are in Don't Press The Button 2!", 0xD2FFC8, "random.levelup");
+                this.refreshRamperStatus();
+            }
+        });
     }
 
     @SubscribeEvent
