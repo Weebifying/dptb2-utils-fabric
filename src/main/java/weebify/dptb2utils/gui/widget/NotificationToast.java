@@ -99,7 +99,7 @@ public class NotificationToast implements Toast {
 
                 for (int i = 0; i < 2; i++) {
                     int idx = firstLineIndex + i;
-                    if (idx < size) {
+                    if (0 <= idx && idx < size) {
                         context.drawText(textRenderer, descList.get(idx), 30, y, this.color & 0x00FFFFFF | k, false);
                         y += lineHeight;
                     }
